@@ -1,0 +1,22 @@
+# Dataset files (too large for GitHub)
+defungi.zip
+defungi_raw/
+dataset/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
