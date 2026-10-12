@@ -202,6 +202,18 @@ def split_and_save(class_images):
     
     return class_stats, total_stats
 
+def extract_processed_zip():
+    """Extract dataset_64x64.zip directly if available."""
+    zip_path = BASE_DIR / "dataset_64x64.zip"
+    if zip_path.exists():
+        print(f"[INFO] Found pre-packaged 64x64 dataset: {zip_path}")
+        print("[INFO] Extracting directly (takes ~2 seconds)...")
+        with zipfile.ZipFile(str(zip_path), 'r') as zf:
+            zf.extractall(str(BASE_DIR))
+        print("[INFO] Extracted successfully to dataset/ directory!")
+        return True
+    return False
+
 # ============================================================
 # Main Execution
 # ============================================================
@@ -215,7 +227,22 @@ def main():
           f"Test={SPLIT_RATIOS['test']*100:.0f}%")
     print(f"Output directory: {OUTPUT_DIR}")
     print("=" * 60)
-    
+
+    # Check if dataset directory already exists
+    if OUTPUT_DIR.exists() and (OUTPUT_DIR / "train").exists():
+        n_train = sum(1 for _ in (OUTPUT_DIR / "train").rglob("*.jpg"))
+        n_val = sum(1 for _ in (OUTPUT_DIR / "val").rglob("*.jpg"))
+        n_test = sum(1 for _ in (OUTPUT_DIR / "test").rglob("*.jpg"))
+        if n_train > 0 and n_val > 0 and n_test > 0:
+            print(f"[INFO] Dataset already prepared and verified!")
+            print(f"  Train: {n_train} | Val: {n_val} | Test: {n_test} | Total: {n_train+n_val+n_test}")
+            return
+
+    # Option 1: Fast extract from pre-packaged 64x64 zip (10MB)
+    if extract_processed_zip():
+        return
+
+    # Option 2: Full download and processing from UCI ML Repository
     # Step 1: Download
     download_dataset()
     
