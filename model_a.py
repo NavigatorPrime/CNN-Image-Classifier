@@ -234,8 +234,25 @@ def get_predictions(model, loader, device):
 # ============================================================
 # Plotting Functions
 # ============================================================
+def plot_loss_curves(history, save_path):
+    """Plot and save dedicated Training vs Validation Loss curve."""
+    plt.figure(figsize=(8, 6))
+    epochs = range(1, len(history['train_loss']) + 1)
+    plt.plot(epochs, history['train_loss'], 'b-o', linewidth=2, markersize=4, label='Training Loss')
+    plt.plot(epochs, history['val_loss'], 'r-s', linewidth=2, markersize=4, label='Validation Loss')
+    plt.title('Model A (Standard CNN) - Training vs Validation Loss', fontsize=14, fontweight='bold')
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('Cross-Entropy Loss', fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.legend(fontsize=11)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"[INFO] Loss curve saved to {save_path}", flush=True)
+
+
 def plot_training_curves(history, save_path):
-    """Plot training and validation loss/accuracy curves."""
+    """Plot training and validation loss/accuracy curves side by side."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     
     epochs = range(1, len(history['train_loss']) + 1)
@@ -243,7 +260,7 @@ def plot_training_curves(history, save_path):
     # Loss
     ax1.plot(epochs, history['train_loss'], 'b-o', markersize=3, label='Train Loss')
     ax1.plot(epochs, history['val_loss'], 'r-o', markersize=3, label='Val Loss')
-    ax1.set_title('Model A - Training & Validation Loss', fontsize=14, fontweight='bold')
+    ax1.set_title('Model A - Loss Curve', fontsize=14, fontweight='bold')
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss')
     ax1.legend()
@@ -252,7 +269,7 @@ def plot_training_curves(history, save_path):
     # Accuracy
     ax2.plot(epochs, history['train_acc'], 'b-o', markersize=3, label='Train Accuracy')
     ax2.plot(epochs, history['val_acc'], 'r-o', markersize=3, label='Val Accuracy')
-    ax2.set_title('Model A - Training & Validation Accuracy', fontsize=14, fontweight='bold')
+    ax2.set_title('Model A - Accuracy Curve', fontsize=14, fontweight='bold')
     ax2.set_xlabel('Epoch')
     ax2.set_ylabel('Accuracy')
     ax2.legend()
@@ -261,7 +278,8 @@ def plot_training_curves(history, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Training curves saved to {save_path}")
+    print(f"[INFO] Combined curves saved to {save_path}", flush=True)
+
 
 
 def plot_confusion_matrix(y_true, y_pred, class_names, save_path):
@@ -404,6 +422,7 @@ def main():
     # --------------------------------------------------------
     # Save Plots
     # --------------------------------------------------------
+    plot_loss_curves(history, str(RESULTS_DIR / "loss_curves.png"))
     plot_training_curves(history, str(RESULTS_DIR / "training_curves.png"))
     plot_confusion_matrix(y_true, y_pred, class_names, str(RESULTS_DIR / "confusion_matrix.png"))
     
