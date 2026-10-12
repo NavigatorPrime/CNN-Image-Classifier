@@ -116,4 +116,53 @@ python model_a.py
 python model_a.py --epochs 15 --batch-size 32 --lr 0.001
 ```
 
-All trained checkpoints, loss/accuracy curves (`training_curves.png`), confusion matrix (`confusion_matrix.png`), and classification reports are automatically saved under `results/model_a/`.
+All trained checkpoints, loss/accuracy curves (`training_curves.png`), loss curves (`loss_curves.png`), confusion matrix (`confusion_matrix.png`), and classification reports are automatically saved under `results/model_a/`.
+
+---
+
+## 7. Experimental Results (20 Epochs Training Run)
+
+### Overall Performance:
+- **Training Time:** 588.8 seconds (~9.8 minutes on CPU)
+- **Best Validation Accuracy:** **69.06%** (achieved at epoch 20)
+- **Test Set Accuracy:** **68.90%**
+- **Test Set Cross-Entropy Loss:** **0.7680**
+
+### Epoch-by-Epoch Convergence Table:
+
+| Epoch | Train Loss | Train Acc (%) | Val Loss | Val Acc (%) | Learning Rate |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | 1.1045 | 55.73% | 0.9488 | 59.16% | 0.001 |
+| 2 | 1.0027 | 59.20% | 0.8723 | 63.05% | 0.001 |
+| 3 | 0.9747 | 60.94% | 0.9401 | 60.70% | 0.001 |
+| 4 | 0.9368 | 62.05% | 0.8731 | 64.44% | 0.001 |
+| 5 | 0.9336 | 62.24% | 0.8678 | 62.54% | 0.001 |
+| 6 | 0.9139 | 62.21% | 0.8266 | 64.52% | 0.001 |
+| 7 | 0.9085 | 62.87% | 0.8379 | 65.54% | 0.001 |
+| 8 | 0.8951 | 63.37% | 0.7999 | 65.76% | 0.001 |
+| 9 | 0.8824 | 63.68% | 0.8249 | 66.20% | 0.001 |
+| 10 | 0.8714 | 63.73% | 0.7899 | 67.30% | 0.001 |
+| 11 | 0.8607 | 64.65% | 0.8190 | 67.96% | 0.001 |
+| 12 | 0.8498 | 64.64% | 0.7715 | 67.08% | 0.001 |
+| 13 | 0.8508 | 65.47% | 0.7848 | 66.94% | 0.001 |
+| 14 | 0.8431 | 65.23% | 0.7746 | 68.04% | 0.001 |
+| 15 | 0.8310 | 66.11% | 0.7761 | 66.79% | 0.001 |
+| 16 | 0.8276 | 65.83% | 0.7563 | 66.57% | 0.001 |
+| 17 | 0.8146 | 66.39% | 0.7611 | 67.96% | 0.001 |
+| 18 | 0.8200 | 65.92% | 0.7369 | 68.62% | 0.001 |
+| 19 | 0.8033 | 66.80% | 0.7354 | 68.18% | 0.001 |
+| 20 | 0.8043 | 67.27% | 0.7565 | 69.06% | 0.001 |
+
+### Per-Class Test Set Performance Breakdown:
+
+| Class | Precision | Recall | F1-Score | Test Samples (Support) |
+| :---: | :---: | :---: | :---: | :---: |
+| **H1** | 0.6805 | 0.9426 | 0.7904 | 662 |
+| **H2** | 0.5190 | 0.2336 | 0.3222 | 351 |
+| **H3** | 0.7312 | 0.5484 | 0.6267 | 124 |
+| **H5** | 0.9111 | 0.6613 | 0.7664 | 124 |
+| **H6** | 0.7826 | 0.8036 | 0.7930 | 112 |
+| **Accuracy** | | | **0.6890** | **1373** |
+| **Macro Avg** | 0.7249 | 0.6379 | 0.6597 | 1373 |
+| **Weighted Avg** | 0.6729 | 0.6890 | 0.6539 | 1373 |
+

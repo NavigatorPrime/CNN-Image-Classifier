@@ -1,0 +1,19 @@
+Model A: Standard CNN - Classification Report
+==================================================
+
+              precision    recall  f1-score   support
+
+          H1     0.6805    0.9426    0.7904       662
+          H2     0.5190    0.2336    0.3222       351
+          H3     0.7312    0.5484    0.6267       124
+          H5     0.9111    0.6613    0.7664       124
+          H6     0.7826    0.8036    0.7930       112
+
+    accuracy                         0.6890      1373
+   macro avg     0.7249    0.6379    0.6597      1373
+weighted avg     0.6729    0.6890    0.6539      1373
+
+Test Accuracy: 68.9002%
+Test Loss: 0.7680
+Total Parameters: 2,553,349
+Training Time: 588.8s
