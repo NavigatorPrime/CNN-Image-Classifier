@@ -93,3 +93,14 @@ Then create a Pull Request on GitHub to merge into `main`.
 - **Test Loss:** **0.7680**
 - **Documentation:** See [Model_A_Design.md](Model_A_Design.md)
 - **Plots:** [results/model_a/](results/model_a/) contains `loss_curves.png`, `training_curves.png`, and `confusion_matrix.png`.
+
+### Model B: Lightweight Edge CNN (Depthwise Separable Convolutions)
+- **Parameters:** **37,957** (< 100,000 budget, **87.0% parameter reduction**)
+- **Training Time:** **434.3s** (~7.2 min on CPU, 20 epochs, **26% faster than Model A**)
+- **Best Validation Accuracy:** **73.24%** (**+4.18% over Model A**)
+- **Test Accuracy:** **70.43%** (**+1.53% over Model A**)
+- **Test Loss:** **0.7132** (Lower loss than Model A)
+- **Model Size on Disk:** **180.16 KB** vs 10.2 MB for Model A (**98.2% reduction**)
+- **Documentation:** See [Model_B_Design.md](Model_B_Design.md)
+- **Plots:** [results/model_b/](results/model_b/) contains `loss_curves.png`, `training_curves.png`, and `confusion_matrix.png`.
+
