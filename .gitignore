@@ -1,7 +1,11 @@
 # Dataset files (too large for GitHub)
 defungi.zip
+defungi_raw.zip
 defungi_raw/
 dataset/
+
+# Model checkpoints (large binary files — re-generate by running pipeline.py)
+outputs/checkpoints/*.pth
 
 # Python
 __pycache__/
