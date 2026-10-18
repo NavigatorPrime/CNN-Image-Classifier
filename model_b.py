@@ -28,19 +28,14 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
+from reproducibility import DEFAULT_SEED, make_generator, seed_everything, seed_worker
 
 # ============================================================
 # Configuration & Directory Resolution
 # ============================================================
 REPO_DIR = Path(__file__).resolve().parent
 
-# Check for local dataset first, then fallback to original assignment path
-if (REPO_DIR / "dataset").exists():
-    BASE_DIR = REPO_DIR
-else:
-    fallback = Path(r"d:\Sem 5\Pattern Recognition\CNN Assignment")
-    BASE_DIR = fallback if (fallback / "dataset").exists() else REPO_DIR
-
+BASE_DIR = REPO_DIR
 DATASET_DIR = BASE_DIR / "dataset"
 RESULTS_DIR = REPO_DIR / "results" / "model_b"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -88,9 +83,19 @@ def get_data_loaders(dataset_dir, batch_size=BATCH_SIZE, img_size=IMG_SIZE, num_
     val_dataset   = datasets.ImageFolder(root=str(dataset_dir / "val"),   transform=eval_transform)
     test_dataset  = datasets.ImageFolder(root=str(dataset_dir / "test"),  transform=eval_transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  num_workers=num_workers, pin_memory=pin_mem)
-    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_mem)
-    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_mem)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True,
+        num_workers=num_workers, pin_memory=pin_mem,
+        worker_init_fn=seed_worker, generator=make_generator(DEFAULT_SEED),
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_mem, worker_init_fn=seed_worker,
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_mem, worker_init_fn=seed_worker,
+    )
 
     class_names = train_dataset.classes
     return train_loader, val_loader, test_loader, class_names, len(train_dataset), len(val_dataset), len(test_dataset)
@@ -109,8 +114,9 @@ class DepthwiseSeparableBlock(nn.Module):
 
     Hardware-Aware Activation Justification:
     - Avoids computationally expensive transcendental exponentials (unlike Sigmoid, Tanh, GELU, Swish).
-    - ReLU6 strictly caps activations at 6.0, which prevents saturation and provides optimal
-      resolution for INT8 fixed-point quantization on edge MCUs and DSPs.
+    - ReLU6 bounds positive activations at 6.0. This bounded range can aid
+      quantization, but quantized accuracy and target-runtime efficiency must
+      be measured for the chosen deployment.
     """
     def __init__(self, in_channels: int, out_channels: int, stride: int = 1):
         super(DepthwiseSeparableBlock, self).__init__()
@@ -157,7 +163,8 @@ class ModelB_LightweightCNN(nn.Module):
     
     Constraint: Trainable parameter count < 100,000.
     Achieved:   37,957 parameters (62% margin below limit).
-    MACs:       8.34 M MACs (81.5% reduction compared to Model A).
+    Calculated cost: 7.262848 M Conv2d/Linear MACs for a 3x64x64 input.
+    BatchNorm, activations and pooling are excluded; this is not latency.
     
     Topology:
         Input: 3 x 64 x 64
@@ -366,6 +373,8 @@ def main():
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers")
     args = parser.parse_args()
 
+    seed_everything(DEFAULT_SEED)
+
     # Load data
     train_loader, val_loader, test_loader, class_names, n_train, n_val, n_test = get_data_loaders(
         DATASET_DIR, batch_size=args.batch_size, num_workers=args.num_workers
@@ -446,7 +455,7 @@ def main():
         f.write(f"\nTest Accuracy: {test_acc:.4%}\n")
         f.write(f"Test Loss: {test_loss:.4f}\n")
         f.write(f"Total Parameters: {total_params:,}\n")
-        f.write(f"Estimated Size on Disk: {disk_size_kb:.2f} KB\n")
+        f.write(f"Checkpoint Size on Disk: {disk_size_kb:.2f} KiB\n")
         f.write(f"Training Time: {total_time:.1f}s ({total_time/args.epochs:.2f}s/epoch)\n")
     
     # Save plots
@@ -463,7 +472,7 @@ def main():
     print("=" * 65)
     print(f"Architecture:     Stem + 6x Depthwise Separable Blocks + GAP + Linear")
     print(f"Parameters:       {total_params:,} (< 100,000 constraint)")
-    print(f"Disk Size:        {disk_size_kb:.2f} KB")
+    print(f"Checkpoint Size:  {disk_size_kb:.2f} KiB")
     print(f"Best Val Acc:     {best_val_acc:.2%} (epoch {best_epoch})")
     print(f"Test Accuracy:    {test_acc:.2%}")
     print(f"Test Loss:        {test_loss:.4f}")

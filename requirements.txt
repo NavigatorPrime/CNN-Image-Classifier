@@ -1,0 +1,8 @@
+# Tested dependency set for Python 3.11
+torch==2.2.2
+torchvision==0.17.2
+numpy==1.26.4
+Pillow==10.3.0
+requests==2.31.0
+matplotlib==3.8.4
+scikit-learn==1.4.2

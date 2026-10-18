@@ -24,11 +24,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
+from reproducibility import DEFAULT_SEED, make_generator, seed_everything, seed_worker
 
 # ============================================================
 # Configuration
 # ============================================================
-BASE_DIR = Path(r"d:\Sem 5\Pattern Recognition\CNN Assignment")
+BASE_DIR = Path(__file__).resolve().parent
 DATASET_DIR = BASE_DIR / "dataset"
 RESULTS_DIR = BASE_DIR / "results" / "model_a"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -76,9 +77,19 @@ def get_data_loaders(dataset_dir, batch_size=BATCH_SIZE, img_size=IMG_SIZE, num_
     test_dataset  = datasets.ImageFolder(root=str(dataset_dir / "test"),  transform=eval_transform)
 
     # Data loaders (num_workers=0 avoids Windows multiprocessing spawn issues)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  num_workers=num_workers, pin_memory=pin_mem)
-    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_mem)
-    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_mem)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True,
+        num_workers=num_workers, pin_memory=pin_mem,
+        worker_init_fn=seed_worker, generator=make_generator(DEFAULT_SEED),
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_mem, worker_init_fn=seed_worker,
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_mem, worker_init_fn=seed_worker,
+    )
 
     class_names = train_dataset.classes
     return train_loader, val_loader, test_loader, class_names, len(train_dataset), len(val_dataset), len(test_dataset)
@@ -324,6 +335,8 @@ def main():
     parser.add_argument("--lr", type=float, default=LEARNING_RATE, help="Learning rate")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers (default: 0 for Windows)")
     args = parser.parse_args()
+
+    seed_everything(DEFAULT_SEED)
 
     # Load data
     train_loader, val_loader, test_loader, class_names, n_train, n_val, n_test = get_data_loaders(

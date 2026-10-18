@@ -32,6 +32,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, models
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
+from reproducibility import DEFAULT_SEED, make_generator, seed_everything, seed_worker
 
 # ============================================================
 # Configuration & Paths
@@ -88,9 +89,19 @@ def get_sota_data_loaders(dataset_dir=DATASET_DIR, batch_size=BATCH_SIZE, img_si
     val_dataset   = datasets.ImageFolder(root=str(dataset_dir / "val"),   transform=eval_transform)
     test_dataset  = datasets.ImageFolder(root=str(dataset_dir / "test"),  transform=eval_transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  num_workers=num_workers, pin_memory=pin_mem)
-    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_mem)
-    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_mem)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True,
+        num_workers=num_workers, pin_memory=pin_mem,
+        worker_init_fn=seed_worker, generator=make_generator(DEFAULT_SEED),
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_mem, worker_init_fn=seed_worker,
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=pin_mem, worker_init_fn=seed_worker,
+    )
 
     class_names = train_dataset.classes
     return train_loader, val_loader, test_loader, class_names, len(train_dataset), len(val_dataset), len(test_dataset)
@@ -326,15 +337,15 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
     test_loss, test_acc = evaluate(model, test_loader, criterion, DEVICE)
     cm, report_dict, report_text, _, _ = full_test_evaluation(model, test_loader, DEVICE, class_names)
 
-    # Model size in MB
-    model_size_mb = os.path.getsize(best_model_path) / (1024 * 1024)
+    # Binary file size in MiB. This is storage, not peak runtime RAM.
+    model_size_mib = os.path.getsize(best_model_path) / (1024 * 1024)
 
     print("\n" + "-" * 70)
     print(f"  {model_name} TEST SET PERFORMANCE")
     print("-" * 70)
     print(f"Test Accuracy: {test_acc * 100:.2f}%")
     print(f"Test Loss:     {test_loss:.4f}")
-    print(f"Model Size:    {model_size_mb:.2f} MB")
+    print(f"Checkpoint:    {model_size_mib:.2f} MiB")
     print(f"Total Params:  {total_params:,}")
     print(f"Avg Epoch Time:{avg_epoch_time:.2f}s (Total: {total_time:.1f}s)")
     print("\nClassification Report:\n" + report_text)
@@ -346,7 +357,7 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
     with open(out_dir / "classification_report.txt", "w") as f:
         f.write(f"Model: {model_name}\n")
         f.write(f"Total Parameters: {total_params:,}\n")
-        f.write(f"Model Size on Disk: {model_size_mb:.2f} MB\n")
+        f.write(f"Checkpoint Size on Disk: {model_size_mib:.2f} MiB\n")
         f.write(f"Test Accuracy: {test_acc * 100:.2f}%\n")
         f.write(f"Test Loss: {test_loss:.4f}\n\n")
         f.write(report_text)
@@ -355,7 +366,7 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
         "model_name": model_name,
         "total_parameters": total_params,
         "trainable_parameters": trainable_params,
-        "model_size_mb": round(model_size_mb, 3),
+        "checkpoint_size_mib": round(model_size_mib, 3),
         "test_accuracy": round(test_acc * 100, 2),
         "test_loss": round(test_loss, 4),
         "macro_f1": round(report_dict["macro avg"]["f1-score"], 4),
@@ -382,6 +393,8 @@ def main():
     parser.add_argument("--epochs", type=int, default=NUM_EPOCHS, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch size")
     args = parser.parse_args()
+
+    seed_everything(DEFAULT_SEED)
 
     print("=" * 70)
     print("  Task 5: Lightweight SOTA Benchmark on DeFungi (64x64)")
@@ -421,10 +434,10 @@ def main():
     table_path = RESULTS_DIR / "sota_summary_table.md"
     with open(table_path, "w") as f:
         f.write("# Task 5: Lightweight SOTA Benchmark Results\n\n")
-        f.write("| Architecture | Parameters | Model Size (MB) | Test Accuracy (%) | Test Loss | Macro F1 | Avg Time/Epoch (s) |\n")
+        f.write("| Architecture | Parameters | Checkpoint Size (MiB) | Test Accuracy (%) | Test Loss | Macro F1 | Avg Time/Epoch (s) |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
         for k, v in all_summaries.items():
-            f.write(f"| **{v['model_name']}** | {v['total_parameters']:,} | {v['model_size_mb']} MB | **{v['test_accuracy']}%** | {v['test_loss']} | {v['macro_f1']} | {v['avg_epoch_time_seconds']}s |\n")
+            f.write(f"| **{v['model_name']}** | {v['total_parameters']:,} | {v['checkpoint_size_mib']} MiB | **{v['test_accuracy']}%** | {v['test_loss']} | {v['macro_f1']} | {v['avg_epoch_time_seconds']}s |\n")
 
     print("\n" + "=" * 70)
     print("  TASK 5 SOTA BENCHMARK COMPLETE!")
