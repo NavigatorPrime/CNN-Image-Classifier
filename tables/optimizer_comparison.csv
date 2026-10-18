@@ -1,0 +1,4 @@
+Optimizer,Learning Rate,Momentum,Best Epoch,Best Val Accuracy (%),Test Accuracy (%),Macro Precision,Macro Recall,Macro F1,Avg Epoch Time (s)
+Standard SGD,0.0100,0.0000,19,67.0088,65.9141,0.6572,0.5713,0.5770,21.9504
+SGD + Momentum,0.0100,0.9000,12,70.0880,67.2251,0.6776,0.6225,0.6356,21.4845
+Adam (selected),0.0010,,18,72.2874,70.1384,0.7256,0.6436,0.6737,20.9942

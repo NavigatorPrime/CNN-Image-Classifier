@@ -1,0 +1,27 @@
+# EN3150 Assignment 03 - Submission Checklist
+
+- [x] UCI DeFungi dataset, not CIFAR-10
+- [x] 64x64 RGB images
+- [x] 70/15/15 packaged split with common manifest
+- [x] Model A: standard Conv2D + MaxPool
+- [x] Model B: depthwise separable CNN under 100,000 trainable parameters
+- [x] Exact parameter calculations corrected
+- [x] Hardware-aware activation discussion
+- [x] Task 3: Standard SGD vs SGD+Momentum vs Adam
+- [x] Momentum convergence discussion
+- [x] Model A and B trained for at least 20 epochs
+- [x] Training/validation curves
+- [x] Accuracy, precision, recall, F1 and confusion matrices
+- [x] Model A vs Model B comparison table
+- [x] MobileNetV2 and ShuffleNetV2 fine-tuning
+- [x] Same split for all models
+- [x] SOTA parameter count and checkpoint size
+- [x] Common MAC/FLOP profiling convention
+- [x] Final accuracy/memory/computation trade-off analysis
+- [x] Final report PDF and LaTeX source
+- [x] Standalone Section 6 PDF and LaTeX source
+- [x] Group name and four member names/index numbers in report
+- [x] GitHub repository link in report
+- [ ] Publish `EN3150-A03-Final-Corrected-Report-v2` branch to GitHub (write permission required)
+- [ ] If the lecturer requires an external dataset information sheet, confirm it has been updated
+- [ ] Rename final Moodle files if a numeric group number is required instead of group name `Draco`

@@ -82,3 +82,26 @@ The profiler uses a `1×3×64×64` input and counts Conv2d/Linear MACs only. Bat
 - **MobileNetV2 Artifacts:** [results/mobilenet_v2/](results/mobilenet_v2/) (`mobilenet_v2_best.pth`, `loss_curves.png`, `training_curves.png`, `confusion_matrix.png`, `classification_report.txt`)
 - **ShuffleNetV2 Artifacts:** [results/shufflenet_v2/](results/shufflenet_v2/) (`shufflenet_v2_best.pth`, `loss_curves.png`, `training_curves.png`, `confusion_matrix.png`, `classification_report.txt`)
 
+
+---
+
+## Final Corrected Assignment Deliverables
+
+The corrected assignment package adds the missing controlled optimizer comparison, consistent computational profiling, final figures/tables, and compiled reports.
+
+### Reports
+- `reports/Draco_A03_EN3150.pdf`
+- `reports/Draco_A03_EN3150.tex`
+- `reports/Section_6_Final_Comparison.pdf`
+- `reports/Section_6_Final_Comparison.tex`
+
+### Final figures
+See `figures/task1/`, `figures/task3/`, `figures/task4/`, `figures/task5/`, and `figures/task6/`.
+
+### Final tables
+See `tables/` for CSV and LaTeX versions of the optimizer, custom-model, SOTA, and final comparison tables.
+
+### Audit and submission notes
+See `docs/FINAL_BRANCH_AUDIT.md`, `docs/STAGE3_4_SUMMARY.md`, and `docs/SUBMISSION_CHECKLIST.md`.
+
+The report does not claim unmeasured device inference latency or peak runtime RAM. MAC/FLOP values are calculated consistently from Conv2d and Linear layers for a 3x64x64 input.
