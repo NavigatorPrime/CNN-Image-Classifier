@@ -1,0 +1,20 @@
+Model B: Lightweight Edge CNN - Classification Report
+=======================================================
+
+              precision    recall  f1-score   support
+
+          H1     0.7434    0.8444    0.7907       662
+          H2     0.5329    0.4387    0.4813       351
+          H3     0.6989    0.5242    0.5991       124
+          H5     0.7934    0.7742    0.7837       124
+          H6     0.7881    0.8304    0.8087       112
+
+    accuracy                         0.7043      1373
+   macro avg     0.7113    0.6824    0.6927      1373
+weighted avg     0.6937    0.7043    0.6951      1373
+
+Test Accuracy: 70.4297%
+Test Loss: 0.7132
+Total Parameters: 37,957
+Estimated Size on Disk: 180.16 KB
+Training Time: 434.3s (21.71s/epoch)
