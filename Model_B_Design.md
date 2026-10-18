@@ -10,7 +10,7 @@ As mandated by Task 2 of the assignment:
 1. **Depthwise Separable Factorization:** By decoupling standard 2D convolutions into channel-wise spatial filtering (depthwise convolution) and cross-channel feature recombination ($1 \times 1$ pointwise convolution), the network reduces multiply-accumulate operations and weight counts by **over 80%**.
 2. **Stem Layer:** A single standard $3 \times 3$ convolution at the input preserves multi-channel spatial relationships from raw RGB channels before factorized operations commence.
 3. **Global Average Pooling (GAP) Classifier:** Instead of massive flattened dense layers (which accounted for ~84.7% of Model A's 2.55M parameters), Model B collapses each $8 \times 8$ feature map into a single average value ($128 \times 1 \times 1$). This eliminates hundreds of thousands of parameters, directly keeping the network within the sub-100k budget.
-4. **Hardware-Aware Activation Functions:** Avoids transcendental exponentials (Sigmoid, Tanh, Swish, GELU) in favor of **$\text{ReLU6}$**, maintaining high precision under INT8 fixed-point quantization.
+4. **Hardware-Aware Activation Functions:** Uses **$\text{ReLU6}$**, a bounded piecewise-linear activation that avoids the exponentials used by sigmoid- or tanh-like functions. Its bounded range can simplify quantization calibration, although quantized accuracy must be measured after conversion.
 
 ---
 
@@ -84,23 +84,13 @@ $$\mathbf{\text{Margin Below Ceiling} = 62.04\% \quad (\text{PASSED})}$$
 As required by Task 2:
 > *"Provide hardware-aware justifications for your chosen activation functions (e.g., avoiding computationally expensive exponentials)."*
 
-### 5.1 Penalties of Transcendental Exponentials (Sigmoid, Tanh, GELU, Swish)
-1. **Instruction Cycle Inefficiency:**
-   Functions such as Sigmoid ($\sigma(x) = \frac{1}{1 + e^{-x}}$) and $\tanh$ require floating-point division and natural exponential evaluation ($e^{-x}$).
-   - Low-power edge processors (e.g., ARM Cortex-M0/M3/M4, edge DSPs) lack hardware instructions for natural logarithms or exponents.
-   - Microcontrollers evaluate $e^x$ using 5th–7th order Taylor series or CORDIC iterations, which consume **40 to 120 clock cycles per scalar activation**.
-   - Over large feature maps ($65,536$ values per early layer), exponential activations waste millions of CPU cycles per inference pass, severely shortening battery life.
-2. **Gradient Saturation:** Sigmoid and Tanh saturate at extreme values, causing vanishing gradients during backpropagation.
+### 5.1 Piecewise-linear activation cost
 
-### 5.2 Efficiency of Piecewise Linear Activations (ReLU & ReLU6)
-1. **Single-Cycle Execution:**
-   $\text{ReLU}(x) = \max(0, x)$ compiles into a single conditional select or compare-and-branch assembly instruction (`CMP` + `CSEL` / `BGT` in ARM), executing in **1 clock cycle**.
-2. **Optimal Dynamic Range for INT8 Quantization ($\text{ReLU6}$):**
-   In Model B, we adopt **$\text{ReLU6}(x) = \min(\max(0, x), 6)$**:
-   - Edge accelerators (CMSIS-NN, TensorFlow Lite Micro) perform inference in 8-bit fixed-point format (`int8`, $[-128, 127]$).
-   - Standard unbounded $\text{ReLU}$ allows activations to scale to arbitrary positive values. Large outlier activations stretch the quantization scale factor ($S = \frac{x_{\max} - x_{\min}}{255}$), crushing smaller values to 0 and inducing severe quantization loss.
-   - Clamping at 6 ensures a tight, predictable dynamic range $[0, 6]$, guaranteeing a fixed quantization step size of $\frac{6}{256} \approx 0.0234$ per integer step.
-   - Hardware saturation instructions (such as `USAT` in ARM Neon/Helium) perform two-sided clamping in a single CPU cycle.
+Sigmoid and tanh require exponential evaluation, while $\text{ReLU6}(x)=\min(\max(0,x),6)$ needs only comparisons and clamping. Those operations are typically easier for embedded CPU and accelerator runtimes to implement efficiently. Exact cycle counts depend on the processor, compiler, tensor layout, and inference library, so no fixed latency is claimed here.
+
+### 5.2 Bounded range and quantization
+
+ReLU6 bounds activations to $[0,6]$, which can reduce the effect of large positive outliers when choosing an INT8 scale. This is a useful design property, not a guarantee of quantized accuracy or MCU compatibility; post-training quantization and target-device measurements would still be required.
 
 ---
 
@@ -135,11 +125,13 @@ All trained checkpoints, loss curves (`loss_curves.png`), training curves (`trai
 | :--- | :---: | :---: | :--- |
 | **Convolution Type** | Standard 2D Conv | **Depthwise Separable Conv** | Decoupled spatial & channel ops |
 | **Classifier Type** | 3 Dense Layers ($4096 \to 512 \to 128 \to 5$) | **Global Average Pooling + Linear** | Massive parameter savings |
-| **Total Parameters** | 2,553,349 (~2.55M) | **37,957** (~38k) | **87.0% parameter reduction** |
+| **Total Parameters** | 2,553,349 (~2.55M) | **37,957** (~38k) | **98.51% parameter reduction** (~67.27× fewer) |
 | **Assignment Limit (<100k)** | ❌ Exceeds limit | ** Meets constraint** | **62% safety margin** |
-| **Estimated Size on Disk** | 10.2 MB (`.pth`) | **~155 KB (`.pth`)** | **98.5% smaller memory footprint** |
-| **MAC Operations** | 44.97 M MACs | **8.34 M MACs** | **81.5% fewer operations** |
-| **Hardware Suitability** | High-end Edge / Desktop GPU | **Ultra-low power MCU / Edge Node** | Fits inside typical embedded SRAM/Flash |
+| **Checkpoint size on disk** | 9.755 MiB (`.pth`) | **0.176 MiB (180.2 KiB)** | **98.20% smaller checkpoint** |
+| **Conv/Linear MACs** | 62.325376 M | **7.262848 M** | **88.35% fewer counted MACs** |
+| **Deployment implication** | Larger storage and compute demand | Much smaller storage and MAC count | Target-specific RAM and latency profiling still required |
+
+MACs above use the repository profiler's single convention for a `3×64×64` input: convolution weights and linear multiply-accumulates are counted; batch normalization, activation, pooling, residual, concatenation, shuffle, softmax, and data movement are excluded. FLOPs are reported as $2\times$ MACs. These calculated MACs are not measured latency.
 
 ---
 
@@ -148,9 +140,10 @@ All trained checkpoints, loss curves (`loss_curves.png`), training curves (`trai
 ### Overall Performance:
 - **Training Time:** 434.3 seconds (~7.2 minutes on CPU, 21.7s per epoch — **26% faster than Model A**)
 - **Best Validation Accuracy:** **73.24%** (achieved at epoch 16, **+4.18% over Model A**)
+- **Minimum Validation Loss:** **0.6596** (epoch 20); the validation-accuracy-selected checkpoint at epoch 16 had validation loss **0.6719**
 - **Test Set Accuracy:** **70.43%** (**+1.53% over Model A**)
 - **Test Set Cross-Entropy Loss:** **0.7132** (improved over Model A's 0.7680)
-- **Model Size on Disk:** **180.16 KB** (`.pth`) vs. 10.2 MB for Model A (**98.2% storage reduction**)
+- **Checkpoint Size on Disk:** **180.2 KiB** (`.pth`) vs. 9.755 MiB for Model A (**98.20% storage reduction**)
 
 ### Epoch-by-Epoch Convergence Table:
 

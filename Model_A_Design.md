@@ -88,10 +88,14 @@ Where:
 - **`fc_out`:** $128 \times 5 + 5 = 645$
 
 ### Summary:
-- **Total Parameters:** $\approx 2,552,677$ (~2.55M)
-- **Trainable Parameters:** $2,552,677$
+- **Total Parameters:** $2,553,349$ (~2.55M)
+- **Trainable Parameters:** $2,553,349$
 - **Feature Extractor Parameters:** $389,376$ (~15.3%)
-- **Classifier Parameters:** $2,163,301$ (~84.7%)
+- **Classifier Parameters:** $2,163,973$ (~84.7%)
+
+### Hardware-aware ReLU choice
+
+Model A uses ReLU after every hidden convolutional and fully connected layer, exactly as implemented in `model_a.py`. ReLU is a piecewise-linear maximum operation, so it avoids the exponentials or divisions required by sigmoid- or tanh-like activations. This makes it broadly efficient on CPUs and common inference accelerators without claiming a device-specific latency. The output layer remains linear because `CrossEntropyLoss` consumes logits directly.
 
 ---
 

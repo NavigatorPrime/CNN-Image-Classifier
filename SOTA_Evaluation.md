@@ -44,13 +44,13 @@ To evaluate performance against custom models (Model A and Model B), two pre-tra
 | Hardware Factor | Custom Model B (Sub-100k) | MobileNetV2 | ShuffleNetV2 (1.0x) |
 | :--- | :--- | :--- | :--- |
 | **Convolution Type** | Depthwise Separable | Inverted Residual + Depthwise | Channel Split + Shuffle + Depthwise |
-| **Activation Function** | Standard ReLU | ReLU6 (clamps at 6.0 for FP16/INT8 fixed-point quantization) | Standard ReLU |
-| **Memory Footprint** | Extremely small (~180 KB) | Small (~8.74 MB) | Compact (~4.97 MB) |
-| **Memory Access Cost (MAC)** | Very low arithmetic complexity | Moderate MAC due to expansion ratio $t=6$ | Minimized MAC due to equal channel splits and concatenation |
+| **Activation Function** | ReLU6 | ReLU6 | ReLU |
+| **Checkpoint Size** | 0.176 MiB | 8.740 MiB | 4.966 MiB |
+| **Conv/Linear MACs** | 7.262848 M | 24.454912 M | 11.750752 M |
 | **Non-Linearity Design** | Traditional ReLU across all layers | Linear bottleneck prevents manifold collapse | ReLU on single branch only, reducing memory write operations |
 
 > **Activation Function Hardware Rationale:**
-> Complex exponential activations like Softplus, Sigmoid, Swish, or GELU require non-linear transcendental function evaluations ($e^{-x}$), which consume excessive cycles on microcontrollers and DSPs lacking dedicated transcendental hardware acceleration. In contrast, **ReLU** and **ReLU6** require only a hardware comparator ($O(1)$ clock cycle operation: $\max(0, \min(x, 6))$), ensuring maximum hardware acceleration across edge devices.
+> ReLU and ReLU6 use piecewise-linear comparison/clamping operations and avoid exponential evaluation. This generally makes them practical choices for edge inference, but latency and quantized accuracy remain dependent on the target processor, compiler, runtime, and quantization procedure.
 
 ---
 
@@ -75,12 +75,14 @@ To evaluate performance against custom models (Model A and Model B), two pre-tra
 
 ### 5.1 Full Comparative Benchmark Table (Models A, B vs. Lightweight SOTA)
 
-| Architecture | Model Paradigm | Total Parameters | Trainable Parameters | Model Size on Disk (MB) | Best Val Loss | Test Accuracy (%) | Test Loss | Macro F1-Score | Avg Time / Epoch (s) |
+| Architecture | Model Paradigm | Total Parameters | Trainable Parameters | Checkpoint Size (MiB) | Minimum Val Loss | Test Accuracy (%) | Test Loss | Macro F1-Score | Avg Training Time / Epoch (s) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Model A** | Standard Conv2D + MaxPool | 2,553,349 | 2,553,349 | 9.75 MB | 0.7354 | 68.90% | 0.7680 | 0.6597 | 29.44s |
-| **Model B** | Custom Edge (Depthwise Separable) | 37,957 | 37,957 | 0.18 MB (180 KB) | 0.7029 | 70.43% | 0.7132 | 0.6927 | 21.71s |
-| **ShuffleNetV2 (1.0x)** | Channel Split & Shuffle (Pre-trained) | 1,258,729 | 1,258,729 | **4.97 MB** | 0.3836 | **83.76%** | 0.4167 | **0.8590** | **20.59s** |
-| **MobileNetV2** | Inverted Residuals (Pre-trained) | 2,230,277 | 2,230,277 | **8.74 MB** | **0.3293** | **86.31%** | **0.4092** | **0.8805** | 40.90s |
+| **Model A** | Standard Conv2D + MaxPool | 2,553,349 | 2,553,349 | 9.755 | 0.7354 | 68.90% | 0.7680 | 0.6597 | 29.44s |
+| **Model B** | Custom Edge (Depthwise Separable) | 37,957 | 37,957 | 0.176 | 0.6596 | 70.43% | 0.7132 | 0.6927 | 21.71s |
+| **ShuffleNetV2 (1.0x)** | Channel Split & Shuffle (Pre-trained) | 1,258,729 | 1,258,729 | **4.966** | 0.3836 | **83.76%** | 0.4167 | **0.8590** | **20.59s** |
+| **MobileNetV2** | Inverted Residuals (Pre-trained) | 2,230,277 | 2,230,277 | **8.740** | **0.3293** | **86.31%** | **0.4092** | **0.8805** | 40.90s |
+
+The Model B checkpoint was selected by highest validation accuracy (epoch 16, validation loss 0.6719); 0.6596 is the run's minimum validation loss at epoch 20. Checkpoint size is serialized file size, not runtime RAM. The epoch timings are training measurements and must not be interpreted as inference latency.
 
 ---
 
@@ -119,7 +121,7 @@ weighted avg       0.84      0.84      0.84      1373
 ## 6. Generated Visualizations & Artifacts
 
 - **MobileNetV2 (`results/mobilenet_v2/`):**
-  - Checkpoint: [`mobilenet_v2_best.pth`](results/mobilenet_v2/mobilenet_v2_best.pth) (8.74 MB)
+  - Checkpoint: [`mobilenet_v2_best.pth`](results/mobilenet_v2/mobilenet_v2_best.pth) (8.740 MiB)
   - Loss Curves: [`loss_curves.png`](results/mobilenet_v2/loss_curves.png)
   - Training & Accuracy Curves: [`training_curves.png`](results/mobilenet_v2/training_curves.png)
   - Confusion Matrix: [`confusion_matrix.png`](results/mobilenet_v2/confusion_matrix.png)
@@ -127,7 +129,7 @@ weighted avg       0.84      0.84      0.84      1373
   - History Log: [`training_history.json`](results/mobilenet_v2/training_history.json)
 
 - **ShuffleNetV2 (`results/shufflenet_v2/`):**
-  - Checkpoint: [`shufflenet_v2_best.pth`](results/shufflenet_v2/shufflenet_v2_best.pth) (4.97 MB)
+  - Checkpoint: [`shufflenet_v2_best.pth`](results/shufflenet_v2/shufflenet_v2_best.pth) (4.966 MiB)
   - Loss Curves: [`loss_curves.png`](results/shufflenet_v2/loss_curves.png)
   - Training & Accuracy Curves: [`training_curves.png`](results/shufflenet_v2/training_curves.png)
   - Confusion Matrix: [`confusion_matrix.png`](results/shufflenet_v2/confusion_matrix.png)
@@ -144,14 +146,18 @@ weighted avg       0.84      0.84      0.84      1373
    - **MobileNetV2** achieves **86.31%** test accuracy and **ShuffleNetV2** achieves **83.76%**, compared to Model B's **70.43%** and Model A's **68.90%**.
    - *Why?* Pre-trained transfer learning equips SOTA models with generic low-level edge/texture feature extractors pre-trained on 1.28 million ImageNet images. These rich visual representations dramatically accelerate convergence on low-resolution microscopic cellular patterns, preventing overfitting on small training samples.
 
-2. **Memory Footprint & Edge Deployability:**
-   - **Custom Model B is unmatched in ultra-low storage:** At only **37,957 parameters** and **180 KB** on disk, Model B can be deployed directly into the internal on-chip SRAM/Flash of microcontrollers (e.g., STM32H7, ESP32-S3, Cortex-M7), requiring **zero external RAM**.
-   - **SOTA models require external RAM:** While lightweight, MobileNetV2 (8.74 MB) and ShuffleNetV2 (4.97 MB) exceed typical microcontroller internal SRAM (~512 KB - 1 MB), necessitating external PSRAM or DRAM on edge platforms like Raspberry Pi or Jetson Nano.
+2. **Checkpoint Size & Edge Deployability:**
+   - **Custom Model B has the smallest checkpoint:** 37,957 parameters and **0.176 MiB** on disk, compared with 4.966 MiB for ShuffleNetV2 and 8.740 MiB for MobileNetV2.
+   - Serialized checkpoint size does not equal peak runtime RAM. Activations, framework overhead, tensor precision, and workspace allocations must be measured on the intended deployment stack before claiming that a model fits a particular MCU or requires no external memory.
 
-3. **Latency & Throughput Efficiency:**
-   - **ShuffleNetV2 was the fastest architecture tested:** At **20.59 seconds/epoch**, ShuffleNetV2 trained even faster than custom Model B (21.71s) despite having $33\times$ more parameters!
-   - *Why?* ShuffleNetV2 adheres to hardware metric guidelines (equal channel widths, no group convolution fragmentation, element-wise operation reduction), resulting in lower Memory Access Cost (MAC) and exceptional memory cache locality.
+3. **Training Time and Computational Cost:**
+   - **ShuffleNetV2 had the lowest measured training time per epoch:** 20.59 seconds/epoch, compared with 21.71 seconds for Model B. This is a training measurement on the recorded environment, not an inference-latency benchmark.
+   - Under the common profiler convention, Model B, ShuffleNetV2, and MobileNetV2 require 7.262848 M, 11.750752 M, and 24.454912 M Conv/Linear MACs, respectively. MAC counts are analytical and do not capture memory traffic or runtime-specific kernel efficiency.
 
 4. **Conclusion for Edge Practitioners:**
-   - **Strict Ultra-Low Power / Microcontrollers (<100 KB memory):** Custom **Model B** is the clear winner; it achieves respectable 70.43% accuracy while meeting hard sub-100k parameter constraints.
-   - **Edge Gateways / Embedded Linux (Raspberry Pi, Edge TPU, Cortex-A):** **ShuffleNetV2** and **MobileNetV2** are the superior choice, delivering an enormous **~16% accuracy improvement** with sub-50ms inference latency and modest memory consumption (<10 MB).
+   - **Tight model-budget scenarios:** Model B meets the assignment's sub-100k parameter constraint and achieves 70.43% test accuracy with the smallest checkpoint and MAC count.
+   - **Accuracy-oriented edge scenarios:** ShuffleNetV2 and MobileNetV2 provide higher accuracy, but deployment suitability requires target-device measurements of latency and peak RAM. No sub-50 ms or MCU-fit guarantee is made from training time, checkpoint size, or MACs alone.
+
+### 7.2 Common MAC convention
+
+`scripts/profile_models.py` profiles every model with a `1×3×64×64` input. It counts convolution and linear multiply-accumulates only, excludes batch normalization, activations, pooling, residual additions, concatenation, channel shuffle, softmax, and data movement, and reports FLOPs as $2\times$ MACs. These values are calculated operation counts, not measured latency.

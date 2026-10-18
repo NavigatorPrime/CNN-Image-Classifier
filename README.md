@@ -4,15 +4,16 @@ Custom Convolutional Neural Network architectures for low-resource sensor image 
 
 ---
 
-## 👥 How to Collaborate & Share the Identical Split
+## Reproduce the Identical Split
 
-To ensure both you and your teammate evaluate models on the **100% exact same train, validation, and test sets**:
+The repository preserves and verifies one exact train, validation, and test split.
 
 ### 1. Clone the Repository
-Your teammate should run:
+Clone the repository and select this corrected branch:
 ```bash
 git clone https://github.com/NavigatorPrime/CNN-Image-Classifier.git
 cd CNN-Image-Classifier
+git checkout EN3150-A03-Final-Corrected-Report-v2
 ```
 
 ### 2. Extract the Pre-Processed Dataset (1 Second)
@@ -32,45 +33,6 @@ dataset/
 
 ---
 
-## 🛠️ How Your Teammate Can Build Another Model (e.g. Model B)
-
-To work in parallel without merge conflicts, your teammate should:
-
-### Step 1: Create a Separate Git Branch
-```bash
-git checkout -b model-b
-```
-
-### Step 2: Build the New Model (`model_b.py`)
-They can reuse the shared data loader pipeline directly:
-```python
-import torch
-import torch.nn as nn
-from model_a import get_data_loaders, DATASET_DIR
-
-# Load the identical split in one line
-train_loader, val_loader, test_loader, class_names, n_train, n_val, n_test = get_data_loaders(
-    DATASET_DIR, batch_size=32
-)
-
-# Define Model B (e.g., Dilated convolutions, Residual connections, or Depthwise Separable)
-class ModelB(nn.Module):
-    def __init__(self, num_classes=5):
-        super().__init__()
-        # Custom Model B layers here...
-        pass
-```
-
-### Step 3: Push Their Work to GitHub
-```bash
-git add model_b.py
-git commit -m "Implement and evaluate Model B"
-git push origin model-b
-```
-Then create a Pull Request on GitHub to merge into `main`.
-
----
-
 ## 📊 Dataset Specifications
 - **Source:** [UCI Machine Learning Repository - DeFungi (ID 773)](https://archive.ics.uci.edu/dataset/773/defungi)
 - **Input Resolution:** $64 \times 64$ RGB pixels (downscaled to emulate low-resource sensor environments)
@@ -85,12 +47,32 @@ Then create a Pull Request on GitHub to merge into `main`.
 
 ## 🏆 Current Benchmark Results
 
-| Architecture | Model Paradigm | Total Params | Model Size (MB) | Best Val Loss | Test Accuracy (%) | Test Loss | Macro F1 | Training Time (20 eps) |
+| Architecture | Model Paradigm | Total Params | Checkpoint Size (MiB) | Min Val Loss | Test Accuracy (%) | Test Loss | Macro F1 | Training Time (20 eps) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Model A** | Standard Conv2D + MaxPool | 2,553,349 | 9.75 MB | 0.7354 | 68.90% | 0.7680 | 0.6597 | 588.8s (29.4s/ep) |
-| **Model B** | Custom Sub-100k Edge CNN | 37,957 | 0.18 MB (180 KB) | 0.7029 | 70.43% | 0.7132 | 0.6927 | 434.3s (21.7s/ep) |
-| **ShuffleNetV2 (1.0x)** | Channel Split & Shuffle (SOTA) | 1,258,729 | 4.97 MB | 0.3836 | **83.76%** | 0.4167 | 0.8590 | **412.0s (20.6s/ep)** |
-| **MobileNetV2** | Inverted Residuals (SOTA) | 2,230,277 | 8.74 MB | **0.3293** | **86.31%** | **0.4092** | **0.8805** | 818.4s (40.9s/ep) |
+| **Model A** | Standard Conv2D + MaxPool | 2,553,349 | 9.755 | 0.7354 | 68.90% | 0.7680 | 0.6597 | 588.8s (29.4s/ep) |
+| **Model B** | Custom Sub-100k Edge CNN | 37,957 | 0.176 | 0.6596 | 70.43% | 0.7132 | 0.6927 | 434.3s (21.7s/ep) |
+| **ShuffleNetV2 (1.0x)** | Channel Split & Shuffle (SOTA) | 1,258,729 | 4.966 | 0.3836 | **83.76%** | 0.4167 | 0.8590 | **412.0s (20.6s/ep)** |
+| **MobileNetV2** | Inverted Residuals (SOTA) | 2,230,277 | 8.740 | **0.3293** | **86.31%** | **0.4092** | **0.8805** | 818.4s (40.9s/ep) |
+
+The Model B checkpoint was selected by validation accuracy at epoch 16 (validation loss 0.6719); its run-wide minimum validation loss was 0.6596 at epoch 20. Checkpoint sizes are serialized files, not runtime RAM, and training time is not inference latency.
+
+### Task 3: Optimizer comparison
+
+Run the controlled Model B comparison on the verified split:
+
+```bash
+python optimizer_comparison.py
+```
+
+The script compares standard SGD, SGD with momentum, and Adam for 20 epochs from identical initial weights. It writes the required CSV, JSON, curve, metadata, and optional checkpoints under `results/optimizer_comparison/`.
+
+### Computational cost
+
+```bash
+python scripts/profile_models.py
+```
+
+The profiler uses a `1×3×64×64` input and counts Conv2d/Linear MACs only. Batch normalization, activations, pooling, residual additions, concatenation, channel shuffle, softmax, and data movement are excluded; FLOPs are reported as `2 × MACs`. The calculated counts are not latency measurements.
 
 ---
 
