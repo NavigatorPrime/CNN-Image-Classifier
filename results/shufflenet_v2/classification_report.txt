@@ -1,0 +1,17 @@
+Model: ShuffleNetV2
+Total Parameters: 1,258,729
+Model Size on Disk: 4.97 MB
+Test Accuracy: 83.76%
+Test Loss: 0.4167
+
+              precision    recall  f1-score   support
+
+          H1       0.83      0.90      0.86       662
+          H2       0.77      0.66      0.71       351
+          H3       0.80      0.91      0.85       124
+          H5       0.96      0.89      0.92       124
+          H6       0.98      0.91      0.94       112
+
+    accuracy                           0.84      1373
+   macro avg       0.87      0.85      0.86      1373
+weighted avg       0.84      0.84      0.84      1373

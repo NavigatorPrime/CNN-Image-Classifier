@@ -83,24 +83,20 @@ Then create a Pull Request on GitHub to merge into `main`.
 
 ---
 
-## 🏆 Current Results
+## 🏆 Current Benchmark Results
 
-### Model A: Standard Interleaved Conv2D + MaxPooling
-- **Parameters:** 2,553,349 (~2.55M)
-- **Training Time:** 588.8s (~9.8 min on CPU, 20 epochs)
-- **Best Validation Accuracy:** **69.06%**
-- **Test Accuracy:** **68.90%**
-- **Test Loss:** **0.7680**
-- **Documentation:** See [Model_A_Design.md](Model_A_Design.md)
-- **Plots:** [results/model_a/](results/model_a/) contains `loss_curves.png`, `training_curves.png`, and `confusion_matrix.png`.
+| Architecture | Model Paradigm | Total Params | Model Size (MB) | Best Val Loss | Test Accuracy (%) | Test Loss | Macro F1 | Training Time (20 eps) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Model A** | Standard Conv2D + MaxPool | 2,553,349 | 9.75 MB | 0.7354 | 68.90% | 0.7680 | 0.6597 | 588.8s (29.4s/ep) |
+| **Model B** | Custom Sub-100k Edge CNN | 37,957 | 0.18 MB (180 KB) | 0.7029 | 70.43% | 0.7132 | 0.6927 | 434.3s (21.7s/ep) |
+| **ShuffleNetV2 (1.0x)** | Channel Split & Shuffle (SOTA) | 1,258,729 | 4.97 MB | 0.3836 | **83.76%** | 0.4167 | 0.8590 | **412.0s (20.6s/ep)** |
+| **MobileNetV2** | Inverted Residuals (SOTA) | 2,230,277 | 8.74 MB | **0.3293** | **86.31%** | **0.4092** | **0.8805** | 818.4s (40.9s/ep) |
 
-### Model B: Lightweight Edge CNN (Depthwise Separable Convolutions)
-- **Parameters:** **37,957** (< 100,000 budget, **87.0% parameter reduction**)
-- **Training Time:** **434.3s** (~7.2 min on CPU, 20 epochs, **26% faster than Model A**)
-- **Best Validation Accuracy:** **73.24%** (**+4.18% over Model A**)
-- **Test Accuracy:** **70.43%** (**+1.53% over Model A**)
-- **Test Loss:** **0.7132** (Lower loss than Model A)
-- **Model Size on Disk:** **180.16 KB** vs 10.2 MB for Model A (**98.2% reduction**)
-- **Documentation:** See [Model_B_Design.md](Model_B_Design.md)
-- **Plots:** [results/model_b/](results/model_b/) contains `loss_curves.png`, `training_curves.png`, and `confusion_matrix.png`.
+---
+
+### SOTA Deliverables & Artifacts (Task 5)
+- **Detailed Documentation:** [SOTA_Evaluation.md](SOTA_Evaluation.md)
+- **Runner Script:** [sota_models.py](sota_models.py)
+- **MobileNetV2 Artifacts:** [results/mobilenet_v2/](results/mobilenet_v2/) (`mobilenet_v2_best.pth`, `loss_curves.png`, `training_curves.png`, `confusion_matrix.png`, `classification_report.txt`)
+- **ShuffleNetV2 Artifacts:** [results/shufflenet_v2/](results/shufflenet_v2/) (`shufflenet_v2_best.pth`, `loss_curves.png`, `training_curves.png`, `confusion_matrix.png`, `classification_report.txt`)
 
