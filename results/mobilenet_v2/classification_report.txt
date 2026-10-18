@@ -1,0 +1,17 @@
+Model: MobileNetV2
+Total Parameters: 2,230,277
+Model Size on Disk: 8.74 MB
+Test Accuracy: 86.31%
+Test Loss: 0.4092
+
+              precision    recall  f1-score   support
+
+          H1       0.87      0.90      0.88       662
+          H2       0.78      0.77      0.77       351
+          H3       0.88      0.85      0.87       124
+          H5       0.97      0.89      0.93       124
+          H6       0.97      0.93      0.95       112
+
+    accuracy                           0.86      1373
+   macro avg       0.89      0.87      0.88      1373
+weighted avg       0.86      0.86      0.86      1373
