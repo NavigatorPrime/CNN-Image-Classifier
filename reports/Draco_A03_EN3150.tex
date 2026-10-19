@@ -8,7 +8,6 @@
 \usepackage{array}
 \usepackage{adjustbox}
 \usepackage{float}
-\usepackage{pdflscape}
 \usepackage{subcaption}
 \usepackage{amsmath}
 \usepackage{microtype}
@@ -93,8 +92,9 @@ The UCI DeFungi dataset contains five classes: H1, H2, H3, H5, and H6. All image
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Corrected leakage-free dataset split.}
-\begin{tabular}{lrrrrrr}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrr}
 \toprule
 Split & H1 & H2 & H3 & H5 & H6 & Total\\
 \midrule
@@ -102,7 +102,7 @@ Train & \HOneTrain & \HTwoTrain & \HThreeTrain & \HFiveTrain & \HSixTrain & \Dat
 Validation & \HOneValidation & \HTwoValidation & \HThreeValidation & \HFiveValidation & \HSixValidation & \DatasetValidation\\
 Test & \HOneTest & \HTwoTest & \HThreeTest & \HFiveTest & \HSixTest & \DatasetTest\\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 The resulting training, validation, and test proportions are \DatasetTrainPct\%, \DatasetValidationPct\%, and \DatasetTestPct\%, respectively. We identified 59 duplicate-content groups within the dataset, but none crosses between the three partitions: there are zero cross-split duplicate groups under both the raw-byte and decoded-pixel SHA-256 checks. The dataset manifest also matches the packaged files, with \DatasetTotal{} images in total. These checks are important because even a small amount of duplicate leakage could give an overly optimistic estimate of generalization.
@@ -121,19 +121,18 @@ The resulting training, validation, and test proportions are \DatasetTrainPct\%,
 
 For training, images are resized to $64\times64$, followed by random horizontal and vertical flips, rotations of $\pm15^\circ$, color jitter, tensor conversion, and ImageNet normalization. These augmentations introduce useful appearance variation while leaving the class labels unchanged. Validation and test images undergo deterministic preprocessing without augmentation, so differences in their scores reflect model behavior rather than random image transformations. We use seed 42 to make the experimental setup reproducible.
 
+\clearpage
 \section{Task 2: Custom Architecture Design}
 \subsection{Model A: standard CNN}
 Model A serves as the conventional CNN baseline. It has four feature-extraction blocks, each consisting of a standard $3\times3$ convolution, BatchNorm, ReLU, and $2\times2$ max pooling. As the spatial dimensions decrease, the channel count increases to capture richer features. The implemented layers and their parameter counts are detailed in Table~2.
 
-\clearpage
-\begin{landscape}
-\vspace*{\fill}
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
-\small
+\fontsize{6}{7}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.05}
 \caption{Model A architecture. ReLU, pooling, flattening, and dropout have no trainable parameters.}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lllllllrr}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llllllllrr}
 \toprule
 Stage & Layer sequence & Input & Output filters/units & Kernel & Stride/padding & Output shape & Conv/FC & BN\\
 \midrule
@@ -146,10 +145,9 @@ FC1 & Linear, ReLU, Dropout(0.5) & 4096 & 512 & \dash & \dash & 512 & 2,097,664 
 FC2 & Linear, ReLU, Dropout(0.3) & 512 & 128 & \dash & \dash & 128 & 65,664 & 0\\
 Output & Linear logits & 128 & 5 & \dash & \dash & 5 & 645 & 0\\
 \bottomrule
-\end{tabular}\end{adjustbox}
+\end{tabular*}
 \end{table}
-\vspace*{\fill}
-\end{landscape}
+
 
 
 For a biased Conv2D layer,
@@ -167,15 +165,13 @@ After every convolutional BatchNorm layer and after the first two fully connecte
 \subsection{Model B: depthwise-separable CNN}
 To explore a more compact design, Model B replaces most standard convolutions with depthwise-separable operations. A standard convolutional stem is followed by six depthwise-separable blocks, global average pooling (GAP), dropout, and a linear classifier. Within each block, depthwise Conv2D, BatchNorm, and ReLU6 are followed by pointwise Conv2D, BatchNorm, and ReLU6. Separating spatial filtering from channel mixing reduces the parameter and arithmetic demands of the feature extractor.
 
-\clearpage
-\begin{landscape}
-\vspace*{\fill}
 \begin{table}[H]
 \centering
-\small
+\fontsize{6}{7}\selectfont
+\setlength{\tabcolsep}{2pt}
+\captionsetup{font=scriptsize}
 \caption{Implemented Model B architecture. Block parameter totals include both convolutions and both BatchNorm layers.}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llllllllrr}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llllllllrr}
 \toprule
 Stage & Input $C$ & DW $C$ & Groups & Kernel & Stride/pad & PW out & Output shape & Parameters & Activation\\
 \midrule
@@ -190,10 +186,8 @@ GAP & 128 & \dash & \dash & global & \dash & 128 & $128\times1\times1$ & 0 & \da
 Dropout & 128 & \dash & \dash & \dash & \dash & 128 & 128 & 0 & \dash\\
 Classifier & 128 & \dash & \dash & \dash & \dash & 5 & 5 logits & 645 & Linear\\
 \bottomrule
-\end{tabular}\end{adjustbox}
+\end{tabular*}
 \end{table}
-\vspace*{\fill}
-\end{landscape}
 
 
 The depthwise and pointwise convolution parameter formulas are
@@ -214,19 +208,18 @@ The arithmetic benefit can also be seen analytically. Considering convolution al
 
 ReLU6 is applied after the stem and after both convolution stages in every separable block. It retains ReLU's simple piecewise-linear behavior while adding an upper clamp, without requiring exponential functions. At the output, a strictly linear layer produces five logits for \texttt{CrossEntropyLoss}; applying ReLU6 or softmax at that point would change the intended loss interface, so neither is included.
 
+\clearpage
 \section{Task 3: Optimizer Selection and Tuning}
 \subsection{Controlled comparison}
 We compared three optimizers on Model B to understand how the update rule affects convergence. For a fair comparison, all three trials shared the corrected dataset split, the same initial-state hash, seed 42, batch size 32, augmentation settings, cross-entropy loss, and weight decay $10^{-4}$. Training lasted 20 epochs in each case, and the checkpoint with the highest validation accuracy was selected. We also applied \texttt{ReduceLROnPlateau} to validation loss with a reduction factor of 0.5 and patience 4; none of these runs reached a point where the scheduler reduced the learning rate.
 
-\clearpage
-\begin{landscape}
-\vspace*{\fill}
 \begin{table}[H]
 \centering
-\small
+\fontsize{6}{7}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.05}
 \caption{Optimizer results using the shared leakage-free split.}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lrrrrrrrr}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrrrr}
 \toprule
 Optimizer & LR & Momentum & Best val. acc. & Epoch & Final train loss & Final val. loss & Test loss & Test acc.\\
 \midrule
@@ -234,22 +227,17 @@ Standard SGD & \SGDLearningRate & \SGDMomentum & \SGDBestVal\% & \SGDBestEpoch &
 SGD + Momentum & \MomentumLearningRate & \MomentumMomentum & \MomentumBestVal\% & \MomentumBestEpoch & \MomentumFinalTrainLoss & \MomentumFinalValLoss & \MomentumTestLoss & \MomentumTestAccuracy\%\\
 Adam & \AdamLearningRate & \AdamMomentum & \textbf{\AdamBestVal\%} & \AdamBestEpoch & \textbf{\AdamFinalTrainLoss} & \textbf{\AdamFinalValLoss} & \textbf{\AdamTestLoss} & \textbf{\AdamTestAccuracy\%}\\
 \bottomrule
-\end{tabular}\end{adjustbox}
+\end{tabular*}
 \end{table}
-\vspace*{\fill}
-\end{landscape}
 
 
-\clearpage
-\begin{landscape}
-\vspace*{\fill}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.98\linewidth]{task3/optimizer_comparison_curves.png}
+\includegraphics[width=\linewidth,height=0.30\textheight,keepaspectratio]{task3/optimizer_comparison_curves.png}
 \caption{Training loss, validation loss, and validation accuracy over the controlled 20-epoch optimizer comparison. Each curve uses the same initial model state and corrected dataset split.}
 \end{figure}
-\vspace*{\fill}
-\end{landscape}
+
 
 \subsection{Momentum effect}
 Momentum accumulates a velocity in directions supported by successive gradients:
@@ -266,18 +254,17 @@ We therefore retained Adam with a base learning rate of 0.001, rather than the 0
 \section{Task 4: Custom Model Training and Evaluation}
 After choosing the training configuration, we trained both custom models on the same corrected split for 20 epochs. For each model, we restored its selected checkpoint before evaluating the held-out test set. This avoids presenting the last epoch as the final model when an earlier checkpoint performed better on validation data.
 
-\clearpage
-\begin{figure}[p]
+\begin{figure}[H]
 \centering
 \begin{subfigure}{0.98\linewidth}
 \centering
-\includegraphics[width=0.94\linewidth]{task4/model_a_training_curves.png}
+\includegraphics[width=0.72\linewidth]{task4/model_a_training_curves.png}
 \caption{Model A.}
 \end{subfigure}
 \par\vspace{0.75em}
 \begin{subfigure}{0.98\linewidth}
 \centering
-\includegraphics[width=0.94\linewidth]{task4/model_b_training_curves.png}
+\includegraphics[width=0.72\linewidth]{task4/model_b_training_curves.png}
 \caption{Model B.}
 \end{subfigure}
 \caption{Training and validation loss and accuracy for the two custom models.}
@@ -302,29 +289,26 @@ After choosing the training configuration, we trained both custom models on the 
 \end{figure}
 \clearpage
 
-\clearpage
-\begin{landscape}
-\vspace*{\fill}
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
-\small
+\fontsize{6}{7}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.05}
 \caption{Custom-model performance on the leakage-free test split. Checkpoint sizes use binary MiB/KiB.}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lrrrrrrrrrrrr}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrrrrrrr}
 \toprule
 Model & Params & Size & Test loss & Test acc. & Macro P & Macro R & Macro F1 & Total time & Time/ep & MACs & FLOPs\\
 \midrule
 Model A & \ModelAParams & \ModelASizeMiB\ MiB & \ModelATestLoss & \ModelAAccuracy\% & \ModelAPrecision & \ModelARecall & \ModelAFOne & \ModelATotalTime\ s & \ModelAEpochTime\ s & \ModelAMACs\ M & \ModelAFLOPs\ M\\
 Model B & \ModelBParams & \ModelBSizeKiB\ KiB & \ModelBTestLoss & \ModelBAccuracy\% & \ModelBPrecision & \ModelBRecall & \ModelBFOne & \ModelBTotalTime\ s & \ModelBEpochTime\ s & \ModelBMACs\ M & \ModelBFLOPs\ M\\
 \bottomrule
-\end{tabular}\end{adjustbox}
+\end{tabular*}
 \end{table}
-\vspace*{\fill}
-\end{landscape}
+
 
 
 \subsection{Model A versus Model B trade-off}
-Despite its much smaller size, Model B improved test accuracy by \ModelBAccuracyGainVsA{} percentage points and achieved a higher macro F1 (\ModelBFOne{} versus \ModelAFOne). It requires \ModelBParamReductionVsA\% fewer parameters---equivalent to \ModelBParamFactorVsA$\times$ fewer---and \ModelBMACReductionVsA\% fewer calculated MACs. The checkpoint is also substantially smaller: \ModelBSizeKiB\ KiB rather than \ModelASizeMiB\ MiB. In our training environment, its average epoch was shorter as well.
+Despite its much smaller size, Model B improved test accuracy by \ModelBAccuracyGainVsA{} percentage points and achieved a higher macro F1 (\ModelBFOne{} versus \ModelAFOne). It requires \ModelBParamReductionVsA\% fewer parameters equivalent to \ModelBParamFactorVsA$\times$ fewer and \ModelBMACReductionVsA\% fewer calculated MACs. The checkpoint is also substantially smaller: \ModelBSizeKiB\ KiB rather than \ModelASizeMiB\ MiB. In our training environment, its average epoch was shorter as well.
 
 Model A remains a useful reference because its standard convolutions and large fully connected classifier are familiar and offer substantial representational capacity. However, that extra capacity did not translate into better accuracy on the clean test set. Model B's depthwise-separable layers and global pooling offer a more attractive balance for resource-constrained exploration. This finding should not be confused with a deployment guarantee: checkpoint size, parameter count, MACs, activation RAM, and inference latency describe different aspects of cost. We did not measure peak device RAM or inference latency.
 
@@ -367,25 +351,22 @@ The custom models establish what can be achieved when training from scratch. We 
 \end{figure}
 \clearpage
 
-\clearpage
-\begin{landscape}
-\vspace*{\fill}
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
-\small
+\fontsize{6}{7}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.05}
 \caption{Fine-tuned model results on the leakage-free test split.}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lrrrrrrrrrrr}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrrrrrr}
 \toprule
 Model & Params & Size & Loss & Accuracy & Macro P & Macro R & Macro F1 & Total time & Time/ep & MACs/FLOPs\\
 \midrule
 MobileNetV2 & \MobileParams & \MobileSizeMiB\ MiB & \MobileTestLoss & \MobileAccuracy\% & \MobilePrecision & \MobileRecall & \MobileFOne & \MobileTotalTime\ s & \MobileEpochTime\ s & \MobileMACs/\MobileFLOPs\ M\\
 ShuffleNetV2 1.0x & \ShuffleParams & \ShuffleSizeMiB\ MiB & \ShuffleTestLoss & \ShuffleAccuracy\% & \ShufflePrecision & \ShuffleRecall & \ShuffleFOne & \ShuffleTotalTime\ s & \ShuffleEpochTime\ s & \ShuffleMACs/\ShuffleFLOPs\ M\\
 \bottomrule
-\end{tabular}\end{adjustbox}
+\end{tabular*}
 \end{table}
-\vspace*{\fill}
-\end{landscape}
+
 
 
 The fine-tuning results show a clear accuracy advantage over the custom models. MobileNetV2 achieves the highest accuracy and macro F1, while ShuffleNetV2 provides a smaller model with fewer MACs and still performs substantially better than Model B. Pre-training is likely helpful because the networks begin with reusable visual features; however, model capacity and architecture differ too, so this experiment cannot isolate the effect of pre-training alone.
