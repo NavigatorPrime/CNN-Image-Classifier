@@ -1,5 +1,9 @@
 # CNN Image Classifier — DeFungi 64×64 Benchmark
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NavigatorPrime/CNN-Image-Classifier/blob/EN3150-A03-Final-Corrected-Report/Draco_A03_EN3150.ipynb)
+[![Report PDF](https://img.shields.io/badge/Report-Draco__A03__EN3150.pdf-red?logo=adobeacrobatreader)](reports/Draco_A03_EN3150.pdf)
+[![Jupyter Notebook](https://img.shields.io/badge/Notebook-Draco__A03__EN3150.ipynb-orange?logo=jupyter)](Draco_A03_EN3150.ipynb)
+
 This project compares two custom convolutional networks and two lightweight
 pre-trained architectures on five classes from the UCI DeFungi dataset. All
 experiments use 64×64 RGB inputs and the same deterministic, class-aware split.

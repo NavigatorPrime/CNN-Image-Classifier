@@ -1,9 +1,11 @@
-# Dataset files (too large for GitHub)
+# Dataset and submission files
 defungi.zip
 defungi_raw/
 dataset/
 runs/
 generated/
+Draco_A03_EN3150.zip
+draco/
 
 # Python
 __pycache__/
