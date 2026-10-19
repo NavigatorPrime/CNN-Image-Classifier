@@ -1,0 +1,62 @@
+[
+  {
+    "Model":"Model A",
+    "Test Accuracy (%)":67.6427525622,
+    "Test Loss":0.8359830288,
+    "Macro Precision":0.6819688439,
+    "Macro Recall":0.6359595957,
+    "Macro F1":0.6253741016,
+    "Total Parameters":2553349,
+    "Checkpoint Size (MiB)":9.7546215057,
+    "FP32 Weights (MiB)":9.7402534485,
+    "MACs (M)":62.325376,
+    "FLOPs (M; 2\/MAC)":124.650752,
+    "Avg Epoch Time (s)":17.3189673424,
+    "Total Training Time (s)":346.4348223209
+  },
+  {
+    "Model":"Model B",
+    "Test Accuracy (%)":70.5710102489,
+    "Test Loss":0.6755281496,
+    "Macro Precision":0.7416114507,
+    "Macro Recall":0.6606332651,
+    "Macro F1":0.6800462889,
+    "Total Parameters":37957,
+    "Checkpoint Size (MiB)":0.1755466461,
+    "FP32 Weights (MiB)":0.1447944641,
+    "MACs (M)":7.262848,
+    "FLOPs (M; 2\/MAC)":14.525696,
+    "Avg Epoch Time (s)":12.6885739923,
+    "Total Training Time (s)":253.7971265316
+  },
+  {
+    "Model":"ShuffleNetV2 1.0x",
+    "Test Accuracy (%)":83.4553440703,
+    "Test Loss":0.3968,
+    "Macro Precision":0.8704560264,
+    "Macro Recall":0.851885701,
+    "Macro F1":0.8606243035,
+    "Total Parameters":1258729,
+    "Checkpoint Size (MiB)":4.9655151367,
+    "FP32 Weights (MiB)":4.8016700745,
+    "MACs (M)":11.750752,
+    "FLOPs (M; 2\/MAC)":23.501504,
+    "Avg Epoch Time (s)":24.13,
+    "Total Training Time (s)":482.69
+  },
+  {
+    "Model":"MobileNetV2",
+    "Test Accuracy (%)":86.0907759883,
+    "Test Loss":0.3581,
+    "Macro Precision":0.8824392822,
+    "Macro Recall":0.8824961291,
+    "Macro F1":0.8822153378,
+    "Total Parameters":2230277,
+    "Checkpoint Size (MiB)":8.7396030426,
+    "FP32 Weights (MiB)":8.5078315735,
+    "MACs (M)":24.454912,
+    "FLOPs (M; 2\/MAC)":48.909824,
+    "Avg Epoch Time (s)":37.66,
+    "Total Training Time (s)":753.41
+  }
+]

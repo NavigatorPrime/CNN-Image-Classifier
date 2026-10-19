@@ -2,6 +2,8 @@
 defungi.zip
 defungi_raw/
 dataset/
+runs/
+generated/
 
 # Python
 __pycache__/

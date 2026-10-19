@@ -1,9 +1,9 @@
-\begin{tabular}{lrrrrrrrrr}
+\begin{tabular}{lrrrrrrrrrrr}
 \toprule
-Optimizer & Learning Rate & Momentum & Best Epoch & Best Val Accuracy (\%) & Test Accuracy (\%) & Macro Precision & Macro Recall & Macro F1 & Avg Epoch Time (s) \\
+Optimizer & Learning Rate & Momentum & Best Epoch & Best Val Accuracy (\%) & Final Train Loss & Final Validation Loss & Test Accuracy (\%) & Macro Precision & Macro Recall & Macro F1 & Avg Epoch Time (s) \\
 \midrule
-Standard SGD & 0.0100 & 0.0000 & 19 & 67.0088 & 65.9141 & 0.6572 & 0.5713 & 0.5770 & 21.9504 \\
-SGD + Momentum & 0.0100 & 0.9000 & 12 & 70.0880 & 67.2251 & 0.6776 & 0.6225 & 0.6356 & 21.4845 \\
-Adam (selected) & 0.0010 & NaN & 18 & 72.2874 & 70.1384 & 0.7256 & 0.6436 & 0.6737 & 20.9942 \\
+Standard SGD & 0.0100 & 0.0000 & 18 & 66.0088 & 0.8961 & 0.8384 & 65.6662 & 0.6705 & 0.5719 & 0.5844 & 12.0520 \\
+SGD + Momentum & 0.0100 & 0.9000 & 18 & 70.5409 & 0.7938 & 0.7165 & 68.8141 & 0.6723 & 0.6594 & 0.6563 & 11.9867 \\
+Adam (selected) & 0.0010 & NaN & 20 & 73.2456 & 0.7510 & 0.6671 & 70.5710 & 0.7416 & 0.6606 & 0.6800 & 12.3118 \\
 \bottomrule
 \end{tabular}

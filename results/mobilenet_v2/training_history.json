@@ -2,7 +2,7 @@
   "model_name": "MobileNetV2",
   "total_parameters": 2230277,
   "trainable_parameters": 2230277,
-  "model_size_mb": 8.74,
+  "checkpoint_size_mib": 8.74,
   "test_accuracy": 86.31,
   "test_loss": 0.4092,
   "macro_f1": 0.8805,

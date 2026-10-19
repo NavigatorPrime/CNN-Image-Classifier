@@ -1,0 +1,57 @@
+{
+  "status": "PASS",
+  "dataset": {
+    "total": 9114,
+    "split_counts": {
+      "train": 6380,
+      "val": 1368,
+      "test": 1366
+    },
+    "class_split_counts": {
+      "H1": {
+        "train": 3083,
+        "val": 661,
+        "test": 660
+      },
+      "H2": {
+        "train": 1634,
+        "val": 350,
+        "test": 350
+      },
+      "H3": {
+        "train": 573,
+        "val": 123,
+        "test": 123
+      },
+      "H5": {
+        "train": 573,
+        "val": 123,
+        "test": 122
+      },
+      "H6": {
+        "train": 517,
+        "val": 111,
+        "test": 111
+      }
+    },
+    "raw_duplicate_groups": 59,
+    "pixel_duplicate_groups": 59,
+    "raw_cross_split_groups": 0,
+    "pixel_cross_split_groups": 0
+  },
+  "manifest_sha256": "7725325230ba965cefc254ac0a6fd641f423718bfb2ef489e3e852b16da38898",
+  "package_sha256": "9681be856dda4db013e0ff25611b79b589d8a882f5e5718777e407a46b6b1f84",
+  "models_validated": [
+    "Model A",
+    "Model B",
+    "MobileNetV2",
+    "ShuffleNetV2 1.0x"
+  ],
+  "optimizer_runs_validated": [
+    "Standard SGD",
+    "SGD + Momentum",
+    "Adam (selected)"
+  ],
+  "shared_optimizer_initial_state_sha256": "0542a27459ffc53ee21ce37271c7fc13cc6fbcff08e68a6f684a5948f6472730",
+  "cross_split_duplicates": 0
+}

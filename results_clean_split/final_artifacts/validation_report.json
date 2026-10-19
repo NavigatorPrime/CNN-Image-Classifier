@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "canonical_figures_validated": 17,
+  "canonical_tables_validated": 18,
+  "report_pages": {
+    "Draco_A03_EN3150.pdf": 11,
+    "Section_6_Final_Comparison.pdf": 3
+  },
+  "stale_metric_tokens_in_final_pdfs": 0,
+  "architecture_parameter_totals": {
+    "Model A": 2553349,
+    "Model B": 37957
+  }
+}

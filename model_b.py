@@ -28,7 +28,15 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
-from reproducibility import DEFAULT_SEED, make_generator, seed_everything, seed_worker
+from data_preparation import verify_prepared_dataset
+from reproducibility import (
+    DEFAULT_SEED,
+    dataset_provenance,
+    make_generator,
+    prepare_run_directory,
+    seed_everything,
+    seed_worker,
+)
 
 # ============================================================
 # Configuration & Directory Resolution
@@ -37,8 +45,6 @@ REPO_DIR = Path(__file__).resolve().parent
 
 BASE_DIR = REPO_DIR
 DATASET_DIR = BASE_DIR / "dataset"
-RESULTS_DIR = REPO_DIR / "results" / "model_b"
-RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Hyperparameters
 IMG_SIZE = 64
@@ -50,7 +56,6 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print(f"[INFO] Using device: {DEVICE}")
 print(f"[INFO] Dataset directory: {DATASET_DIR}")
-print(f"[INFO] Results directory: {RESULTS_DIR}")
 
 # ============================================================
 # Data Loading & Transforms (Identical to Model A)
@@ -371,9 +376,17 @@ def main():
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch size")
     parser.add_argument("--lr", type=float, default=LEARNING_RATE, help="Learning rate")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers")
+    parser.add_argument("--output-dir", help="Run output directory; defaults to a unique runs/model_b directory")
+    parser.add_argument("--overwrite", action="store_true", help="Allow writing into a non-empty output directory")
     args = parser.parse_args()
 
+    results_dir = prepare_run_directory(
+        REPO_DIR, "model_b", args.output_dir, args.overwrite
+    )
+    print(f"[INFO] Results directory: {results_dir}")
+
     seed_everything(DEFAULT_SEED)
+    verify_prepared_dataset(DATASET_DIR)
 
     # Load data
     train_loader, val_loader, test_loader, class_names, n_train, n_val, n_test = get_data_loaders(
@@ -401,7 +414,7 @@ def main():
     # Training history
     history = {
         'train_loss': [], 'train_acc': [],
-        'val_loss': [], 'val_acc': []
+        'val_loss': [], 'val_acc': [], 'epoch_times': []
     }
     
     best_val_acc = 0.0
@@ -413,6 +426,7 @@ def main():
     print("-" * 72)
     
     for epoch in range(1, args.epochs + 1):
+        epoch_start = time.time()
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, DEVICE)
         val_loss, val_acc = evaluate(model, val_loader, criterion, DEVICE)
         scheduler.step(val_loss)
@@ -421,6 +435,7 @@ def main():
         history['train_acc'].append(train_acc)
         history['val_loss'].append(val_loss)
         history['val_acc'].append(val_acc)
+        history['epoch_times'].append(time.time() - epoch_start)
         
         current_lr = optimizer.param_groups[0]['lr']
         print(f"{epoch:>6} | {train_loss:>10.4f} | {train_acc:>9.2%} | {val_loss:>10.4f} | {val_acc:>9.2%} | {current_lr:>10.6f}")
@@ -428,7 +443,7 @@ def main():
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             best_epoch = epoch
-            torch.save(model.state_dict(), str(RESULTS_DIR / "model_b_best.pth"))
+            torch.save(model.state_dict(), str(results_dir / "model_b_best.pth"))
     
     total_time = time.time() - start_time
     print(f"\n[INFO] Training complete in {total_time:.1f}s ({total_time/60:.1f} min)")
@@ -436,48 +451,89 @@ def main():
     
     # Test evaluation
     print("\n[INFO] Loading best model for test evaluation...")
-    model.load_state_dict(torch.load(str(RESULTS_DIR / "model_b_best.pth"), weights_only=True))
+    model.load_state_dict(torch.load(str(results_dir / "model_b_best.pth"), weights_only=True))
     
     test_loss, test_acc = evaluate(model, test_loader, criterion, DEVICE)
     print(f"[RESULT] Test Loss: {test_loss:.4f}")
     print(f"[RESULT] Test Accuracy: {test_acc:.2%}")
     
     y_true, y_pred = get_predictions(model, test_loader, DEVICE)
-    report = classification_report(y_true, y_pred, target_names=class_names, digits=4)
+    report = classification_report(
+        y_true, y_pred, target_names=class_names, digits=4, zero_division=0
+    )
+    report_dict = classification_report(
+        y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0
+    )
+    macro = report_dict["macro avg"]
+    cm = confusion_matrix(y_true, y_pred)
     print(f"\n[RESULT] Classification Report:\n{report}")
     
     # Save classification report
-    disk_size_kb = os.path.getsize(str(RESULTS_DIR / "model_b_best.pth")) / 1024
-    with open(str(RESULTS_DIR / "classification_report.txt"), 'w') as f:
+    checkpoint_size_kib = os.path.getsize(str(results_dir / "model_b_best.pth")) / 1024
+    checkpoint_size_mib = checkpoint_size_kib / 1024
+    average_epoch_time = float(np.mean(history["epoch_times"]))
+    with open(str(results_dir / "classification_report.txt"), 'w') as f:
         f.write("Model B: Lightweight Edge CNN - Classification Report\n")
         f.write("=" * 55 + "\n\n")
         f.write(report)
         f.write(f"\nTest Accuracy: {test_acc:.4%}\n")
         f.write(f"Test Loss: {test_loss:.4f}\n")
         f.write(f"Total Parameters: {total_params:,}\n")
-        f.write(f"Checkpoint Size on Disk: {disk_size_kb:.2f} KiB\n")
-        f.write(f"Training Time: {total_time:.1f}s ({total_time/args.epochs:.2f}s/epoch)\n")
+        f.write(f"Checkpoint Size on Disk: {checkpoint_size_kib:.2f} KiB\n")
+        f.write(f"Best Epoch: {best_epoch}\n")
+        f.write(f"Best Validation Accuracy: {best_val_acc:.6f}\n")
+        f.write(f"Macro Precision: {macro['precision']:.6f}\n")
+        f.write(f"Macro Recall: {macro['recall']:.6f}\n")
+        f.write(f"Macro F1: {macro['f1-score']:.6f}\n")
+        f.write(f"Training Time: {total_time:.2f}s ({average_epoch_time:.2f}s/epoch)\n")
     
     # Save plots
-    plot_loss_curves(history, str(RESULTS_DIR / "loss_curves.png"))
-    plot_training_curves(history, str(RESULTS_DIR / "training_curves.png"))
-    plot_confusion_matrix(y_true, y_pred, class_names, str(RESULTS_DIR / "confusion_matrix.png"))
+    plot_loss_curves(history, str(results_dir / "loss_curves.png"))
+    plot_training_curves(history, str(results_dir / "training_curves.png"))
+    plot_confusion_matrix(y_true, y_pred, class_names, str(results_dir / "confusion_matrix.png"))
+    np.savetxt(results_dir / "confusion_matrix.csv", cm, fmt="%d", delimiter=",")
     
     # Save history json
-    with open(str(RESULTS_DIR / "training_history.json"), 'w') as f:
-        json.dump(history, f, indent=2)
+    checkpoint_path = results_dir / "model_b_best.pth"
+    summary = {
+        "model_name": "Model B",
+        "total_parameters": total_params,
+        "trainable_parameters": trainable_params,
+        "epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "seed": DEFAULT_SEED,
+        "samples": {"train": n_train, "validation": n_val, "test": n_test},
+        "dataset": dataset_provenance(REPO_DIR),
+        "checkpoint_selection": "highest validation accuracy",
+        "best_epoch": best_epoch,
+        "best_validation_accuracy": best_val_acc,
+        "checkpoint": checkpoint_path.as_posix(),
+        "checkpoint_size_mib": checkpoint_size_mib,
+        "test_loss": test_loss,
+        "test_accuracy": test_acc * 100,
+        "macro_precision": macro["precision"],
+        "macro_recall": macro["recall"],
+        "macro_f1": macro["f1-score"],
+        "total_training_time_seconds": total_time,
+        "avg_epoch_time_seconds": average_epoch_time,
+        "confusion_matrix": cm.tolist(),
+        "classification_report": report_dict,
+        "history": history,
+    }
+    with open(str(results_dir / "training_history.json"), 'w') as f:
+        json.dump(summary, f, indent=2)
         
     print("\n" + "=" * 65)
     print("MODEL B: LIGHTWEIGHT CNN - FINAL SUMMARY")
     print("=" * 65)
     print(f"Architecture:     Stem + 6x Depthwise Separable Blocks + GAP + Linear")
     print(f"Parameters:       {total_params:,} (< 100,000 constraint)")
-    print(f"Checkpoint Size:  {disk_size_kb:.2f} KiB")
+    print(f"Checkpoint Size:  {checkpoint_size_kib:.2f} KiB")
     print(f"Best Val Acc:     {best_val_acc:.2%} (epoch {best_epoch})")
     print(f"Test Accuracy:    {test_acc:.2%}")
     print(f"Test Loss:        {test_loss:.4f}")
     print(f"Training Time:    {total_time:.1f}s")
-    print(f"Results saved to: {RESULTS_DIR}")
+    print(f"Results saved to: {results_dir}")
     print("=" * 65)
 
 

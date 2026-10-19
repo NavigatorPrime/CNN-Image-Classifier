@@ -1,0 +1,98 @@
+[
+  {
+    "Stage": "Block 1",
+    "Layer sequence": "Conv2D -> BatchNorm -> ReLU -> MaxPool",
+    "Input channels/features": 3,
+    "Output channels/filters": 32,
+    "Kernel": "3x3; pool 2x2",
+    "Stride": "1; pool 2",
+    "Padding": 1,
+    "Output": "32x32x32",
+    "Trainable parameters": 960,
+    "Parameter detail": "Conv 896 + BN 64; ReLU/pool 0"
+  },
+  {
+    "Stage": "Block 2",
+    "Layer sequence": "Conv2D -> BatchNorm -> ReLU -> MaxPool",
+    "Input channels/features": 32,
+    "Output channels/filters": 64,
+    "Kernel": "3x3; pool 2x2",
+    "Stride": "1; pool 2",
+    "Padding": 1,
+    "Output": "64x16x16",
+    "Trainable parameters": 18624,
+    "Parameter detail": "Conv 18,496 + BN 128; ReLU/pool 0"
+  },
+  {
+    "Stage": "Block 3",
+    "Layer sequence": "Conv2D -> BatchNorm -> ReLU -> MaxPool",
+    "Input channels/features": 64,
+    "Output channels/filters": 128,
+    "Kernel": "3x3; pool 2x2",
+    "Stride": "1; pool 2",
+    "Padding": 1,
+    "Output": "128x8x8",
+    "Trainable parameters": 74112,
+    "Parameter detail": "Conv 73,856 + BN 256; ReLU/pool 0"
+  },
+  {
+    "Stage": "Block 4",
+    "Layer sequence": "Conv2D -> BatchNorm -> ReLU -> MaxPool",
+    "Input channels/features": 128,
+    "Output channels/filters": 256,
+    "Kernel": "3x3; pool 2x2",
+    "Stride": "1; pool 2",
+    "Padding": 1,
+    "Output": "256x4x4",
+    "Trainable parameters": 295680,
+    "Parameter detail": "Conv 295,168 + BN 512; ReLU/pool 0"
+  },
+  {
+    "Stage": "Flatten",
+    "Layer sequence": "Flatten",
+    "Input channels/features": "256x4x4",
+    "Output channels/filters": 4096,
+    "Kernel": "-",
+    "Stride": "-",
+    "Padding": "-",
+    "Output": "4096",
+    "Trainable parameters": 0,
+    "Parameter detail": "No trainable parameters"
+  },
+  {
+    "Stage": "FC1",
+    "Layer sequence": "Linear -> ReLU -> Dropout(0.5)",
+    "Input channels/features": 4096,
+    "Output channels/filters": 512,
+    "Kernel": "-",
+    "Stride": "-",
+    "Padding": "-",
+    "Output": "512",
+    "Trainable parameters": 2097664,
+    "Parameter detail": "4096x512+512"
+  },
+  {
+    "Stage": "FC2",
+    "Layer sequence": "Linear -> ReLU -> Dropout(0.3)",
+    "Input channels/features": 512,
+    "Output channels/filters": 128,
+    "Kernel": "-",
+    "Stride": "-",
+    "Padding": "-",
+    "Output": "128",
+    "Trainable parameters": 65664,
+    "Parameter detail": "512x128+128"
+  },
+  {
+    "Stage": "Output",
+    "Layer sequence": "Linear logits",
+    "Input channels/features": 128,
+    "Output channels/filters": 5,
+    "Kernel": "-",
+    "Stride": "-",
+    "Padding": "-",
+    "Output": "5",
+    "Trainable parameters": 645,
+    "Parameter detail": "128x5+5"
+  }
+]

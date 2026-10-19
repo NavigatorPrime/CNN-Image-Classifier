@@ -1,6 +1,6 @@
 Model: ShuffleNetV2
 Total Parameters: 1,258,729
-Model Size on Disk: 4.97 MB
+Checkpoint Size on Disk: 4.97 MiB
 Test Accuracy: 83.76%
 Test Loss: 0.4167
 

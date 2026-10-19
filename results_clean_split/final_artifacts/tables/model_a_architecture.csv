@@ -1,0 +1,9 @@
+Stage,Layer sequence,Input channels/features,Output channels/filters,Kernel,Stride,Padding,Output,Trainable parameters,Parameter detail
+Block 1,Conv2D -> BatchNorm -> ReLU -> MaxPool,3,32,3x3; pool 2x2,1; pool 2,1,32x32x32,960,Conv 896 + BN 64; ReLU/pool 0
+Block 2,Conv2D -> BatchNorm -> ReLU -> MaxPool,32,64,3x3; pool 2x2,1; pool 2,1,64x16x16,18624,"Conv 18,496 + BN 128; ReLU/pool 0"
+Block 3,Conv2D -> BatchNorm -> ReLU -> MaxPool,64,128,3x3; pool 2x2,1; pool 2,1,128x8x8,74112,"Conv 73,856 + BN 256; ReLU/pool 0"
+Block 4,Conv2D -> BatchNorm -> ReLU -> MaxPool,128,256,3x3; pool 2x2,1; pool 2,1,256x4x4,295680,"Conv 295,168 + BN 512; ReLU/pool 0"
+Flatten,Flatten,256x4x4,4096,-,-,-,4096,0,No trainable parameters
+FC1,Linear -> ReLU -> Dropout(0.5),4096,512,-,-,-,512,2097664,4096x512+512
+FC2,Linear -> ReLU -> Dropout(0.3),512,128,-,-,-,128,65664,512x128+128
+Output,Linear logits,128,5,-,-,-,5,645,128x5+5

@@ -1,0 +1,62 @@
+[
+  {
+    "Metric":"Total parameters",
+    "Model A":"2,553,349",
+    "Model B":"37,957"
+  },
+  {
+    "Metric":"Actual checkpoint size",
+    "Model A":"9988.7 KiB",
+    "Model B":"179.8 KiB"
+  },
+  {
+    "Metric":"FP32 parameter storage",
+    "Model A":"9974.0 KiB",
+    "Model B":"148.3 KiB"
+  },
+  {
+    "Metric":"Average training time \/ epoch",
+    "Model A":"17.32 s",
+    "Model B":"12.69 s"
+  },
+  {
+    "Metric":"Total training time",
+    "Model A":"346.43 s",
+    "Model B":"253.80 s"
+  },
+  {
+    "Metric":"Test loss",
+    "Model A":"0.8360",
+    "Model B":"0.6755"
+  },
+  {
+    "Metric":"Test accuracy",
+    "Model A":"67.64%",
+    "Model B":"70.57%"
+  },
+  {
+    "Metric":"Macro precision",
+    "Model A":"0.6820",
+    "Model B":"0.7416"
+  },
+  {
+    "Metric":"Macro recall",
+    "Model A":"0.6360",
+    "Model B":"0.6606"
+  },
+  {
+    "Metric":"Macro F1",
+    "Model A":"0.6254",
+    "Model B":"0.6800"
+  },
+  {
+    "Metric":"Calculated MACs (Conv\/Linear only)",
+    "Model A":"62.33 M",
+    "Model B":"7.26 M"
+  },
+  {
+    "Metric":"Calculated FLOPs (2 per MAC)",
+    "Model A":"124.65 M",
+    "Model B":"14.53 M"
+  }
+]

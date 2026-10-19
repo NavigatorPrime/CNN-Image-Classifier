@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
+import hashlib
 import json
 import platform
 import time
@@ -34,11 +35,15 @@ from model_b import (
     get_predictions,
     train_one_epoch,
 )
-from reproducibility import DEFAULT_SEED, seed_everything
+from reproducibility import (
+    DEFAULT_SEED,
+    dataset_provenance,
+    prepare_run_directory,
+    seed_everything,
+)
 
 
 REPO_DIR = Path(__file__).resolve().parent
-RESULTS_DIR = REPO_DIR / "results" / "optimizer_comparison"
 NUM_CLASSES = 5
 DEFAULT_EPOCHS = 20
 BATCH_SIZE = 32
@@ -79,12 +84,22 @@ def make_optimizer(name: str, parameters):
     )
 
 
+def state_dict_sha256(state: dict[str, torch.Tensor]) -> str:
+    digest = hashlib.sha256()
+    for name in sorted(state):
+        tensor = state[name].detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(tensor.numpy().tobytes())
+    return digest.hexdigest()
+
+
 def run_optimizer(
     optimizer_name: str,
     initial_state: dict[str, torch.Tensor],
     epochs: int,
     device: torch.device,
     num_workers: int,
+    results_dir: Path,
 ) -> dict:
     seed_everything(DEFAULT_SEED)
     train_loader, val_loader, test_loader, class_names, n_train, n_val, n_test = (
@@ -117,7 +132,7 @@ def run_optimizer(
     }
     best_validation_accuracy = -1.0
     best_epoch = 0
-    checkpoint_path = RESULTS_DIR / f"{optimizer_name}_best.pth"
+    checkpoint_path = results_dir / f"{optimizer_name}_best.pth"
     start = time.perf_counter()
 
     for epoch in range(1, epochs + 1):
@@ -155,7 +170,7 @@ def run_optimizer(
             "completed_epochs": epoch,
             "history": history,
         }
-        (RESULTS_DIR / f"{optimizer_name}_progress.json").write_text(
+        (results_dir / f"{optimizer_name}_progress.json").write_text(
             json.dumps(progress, indent=2), encoding="utf-8"
         )
 
@@ -185,9 +200,18 @@ def run_optimizer(
         "seed": DEFAULT_SEED,
         "samples": {"train": n_train, "validation": n_val, "test": n_test},
         "parameter_count": parameter_count,
+        "initial_state_sha256": state_dict_sha256(initial_state),
         "checkpoint_selection": "highest validation accuracy",
+        "scheduler": {
+            "name": "ReduceLROnPlateau",
+            "mode": "min",
+            "factor": 0.5,
+            "patience": 4,
+        },
         "best_epoch": best_epoch,
         "best_validation_accuracy": best_validation_accuracy,
+        "final_train_loss": history["train_loss"][-1],
+        "final_train_accuracy": history["train_accuracy"][-1],
         "final_validation_loss": history["validation_loss"][-1],
         "final_validation_accuracy": history["validation_accuracy"][-1],
         "test_loss": test_loss,
@@ -199,11 +223,11 @@ def run_optimizer(
         "average_epoch_seconds": float(np.mean(history["epoch_seconds"])),
         "history": history,
         "classification_report": report,
-        "checkpoint": checkpoint_path.relative_to(REPO_DIR).as_posix(),
+        "checkpoint": checkpoint_path.as_posix(),
     }
 
 
-def save_summary(results: list[dict], device: torch.device) -> None:
+def save_summary(results: list[dict], device: torch.device, results_dir: Path) -> None:
     payload = {
         "experiment": "Task 3 Model B optimizer comparison",
         "method": (
@@ -217,9 +241,10 @@ def save_summary(results: list[dict], device: torch.device) -> None:
             "device": str(device),
             "cuda_available": torch.cuda.is_available(),
         },
+        "dataset": dataset_provenance(REPO_DIR),
         "results": results,
     }
-    (RESULTS_DIR / "optimizer_comparison.json").write_text(
+    (results_dir / "optimizer_comparison.json").write_text(
         json.dumps(payload, indent=2), encoding="utf-8"
     )
 
@@ -230,6 +255,8 @@ def save_summary(results: list[dict], device: torch.device) -> None:
         "weight_decay",
         "best_epoch",
         "best_validation_accuracy",
+        "final_train_loss",
+        "final_train_accuracy",
         "final_validation_loss",
         "final_validation_accuracy",
         "test_loss",
@@ -240,7 +267,7 @@ def save_summary(results: list[dict], device: torch.device) -> None:
         "average_epoch_seconds",
         "total_training_seconds",
     ]
-    with (RESULTS_DIR / "optimizer_comparison.csv").open(
+    with (results_dir / "optimizer_comparison.csv").open(
         "w", newline="", encoding="utf-8"
     ) as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
@@ -249,7 +276,7 @@ def save_summary(results: list[dict], device: torch.device) -> None:
             writer.writerow({field: result[field] for field in fields})
 
 
-def plot_curves(results: list[dict]) -> None:
+def plot_curves(results: list[dict], results_dir: Path) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     panels = [
         ("train_loss", "Training loss", False),
@@ -269,7 +296,7 @@ def plot_curves(results: list[dict]) -> None:
     axes[0].legend(fontsize=9)
     fig.suptitle("Task 3: Model B optimizer comparison")
     fig.tight_layout()
-    fig.savefig(RESULTS_DIR / "optimizer_curves.png", dpi=300, bbox_inches="tight")
+    fig.savefig(results_dir / "optimizer_curves.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -278,11 +305,15 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--output-dir", help="Run output directory; defaults to a unique runs/optimizer_comparison directory")
+    parser.add_argument("--overwrite", action="store_true", help="Allow writing into a non-empty output directory")
     args = parser.parse_args()
     if args.epochs < 1:
         parser.error("--epochs must be positive")
 
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    results_dir = prepare_run_directory(
+        REPO_DIR, "optimizer_comparison", args.output_dir, args.overwrite
+    )
     verify_prepared_dataset()
     torch.set_num_threads(args.threads)
     seed_everything(DEFAULT_SEED)
@@ -293,12 +324,19 @@ def main() -> None:
     assert sum(p.numel() for p in base_model.parameters()) == 37_957
 
     results = [
-        run_optimizer(name, initial_state, args.epochs, device, args.num_workers)
+        run_optimizer(
+            name,
+            initial_state,
+            args.epochs,
+            device,
+            args.num_workers,
+            results_dir,
+        )
         for name in OPTIMIZER_CONFIGS
     ]
-    save_summary(results, device)
-    plot_curves(results)
-    print(f"Saved Task 3 artifacts to {RESULTS_DIR}")
+    save_summary(results, device, results_dir)
+    plot_curves(results, results_dir)
+    print(f"Saved Task 3 artifacts to {results_dir}")
 
 
 if __name__ == "__main__":

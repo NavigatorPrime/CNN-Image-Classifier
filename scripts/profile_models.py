@@ -27,10 +27,10 @@ sys.path.insert(0, str(REPO_DIR))
 
 from model_a import ModelA_StandardCNN
 from model_b import ModelB_LightweightCNN
+from reproducibility import prepare_run_directory
 from sota_models import build_mobilenet_v2, build_shufflenet_v2
 
 
-RESULTS_DIR = REPO_DIR / "results" / "computational_cost"
 INPUT_SHAPE = (1, 3, 64, 64)
 
 
@@ -88,7 +88,19 @@ def profile_model(model: nn.Module) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args()
+    parser.add_argument(
+        "--output-dir",
+        help="Output directory; defaults to a unique runs/computational_cost directory",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow writing into a non-empty explicit output directory",
+    )
+    args = parser.parse_args()
+    results_dir = prepare_run_directory(
+        REPO_DIR, "computational_cost", args.output_dir, args.overwrite
+    )
     models = {
         "Model A": ModelA_StandardCNN(),
         "Model B": ModelB_LightweightCNN(),
@@ -102,7 +114,6 @@ def main() -> None:
         "ShuffleNetV2 1.0x": 1_258_729,
     }
 
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     profiles = {}
     for name, model in models.items():
         profiles[name] = profile_model(model)
@@ -122,7 +133,7 @@ def main() -> None:
         },
         "models": profiles,
     }
-    (RESULTS_DIR / "model_profiles.json").write_text(
+    (results_dir / "model_profiles.json").write_text(
         json.dumps(payload, indent=2), encoding="utf-8"
     )
 
@@ -135,7 +146,7 @@ def main() -> None:
         "flops_2_per_mac",
         "million_flops",
     ]
-    with (RESULTS_DIR / "model_profiles.csv").open(
+    with (results_dir / "model_profiles.csv").open(
         "w", newline="", encoding="utf-8"
     ) as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
@@ -159,6 +170,7 @@ def main() -> None:
             f"{profile['macs'] / 1_000_000:>9.6f} M MACs | "
             f"{profile['flops_2_per_mac'] / 1_000_000:>9.6f} M FLOPs"
         )
+    print(f"Profiles saved to: {results_dir}")
 
 
 if __name__ == "__main__":

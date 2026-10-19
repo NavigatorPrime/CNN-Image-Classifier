@@ -1,0 +1,12 @@
+{
+  "model_b_param_reduction_vs_a_pct": 98.51344254154054,
+  "model_b_param_factor_vs_a": 67.26951550438655,
+  "mobilenet_accuracy_gain_pp": 15.519765739385079,
+  "shufflenet_accuracy_gain_pp": 12.884333821376288,
+  "mobilenet_param_factor_vs_b": 58.75798930368575,
+  "shufflenet_param_factor_vs_b": 33.16197275864794,
+  "mobilenet_mac_factor_vs_b": 3.3671243016513634,
+  "shufflenet_mac_factor_vs_b": 1.61792619093777,
+  "mobilenet_size_factor_vs_b": 49.78507556743484,
+  "shufflenet_size_factor_vs_b": 28.286015406847245
+}

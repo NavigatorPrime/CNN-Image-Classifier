@@ -1,43 +1,42 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage[margin=1in]{geometry}
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=0.72in]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
-\usepackage{longtable}
 \usepackage{array}
 \usepackage{float}
 \usepackage{subcaption}
 \usepackage{amsmath}
-\usepackage{siunitx}
 \usepackage{microtype}
 \usepackage{enumitem}
-\usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
 \usepackage{caption}
 \captionsetup{font=small,labelfont=bf}
-\setlength{\parskip}{0.45em}
+\setlength{\parskip}{0.42em}
 \setlength{\parindent}{0pt}
-\renewcommand{\arraystretch}{1.15}
-\graphicspath{{../figures/}}
+\renewcommand{\arraystretch}{1.12}
+\graphicspath{{../results_clean_split/final_artifacts/figures/}}
+\input{generated_results.tex}
 
-\title{\textbf{EN3150 Assignment 03}\\[0.35em]\Large Resource-Constrained CNN for Edge Image Classification}
-\author{\textbf{Group: Draco}\\\textit{Dealing with AI from the core}}
-\date{October 2026}
+\newcommand{\dash}{\textemdash}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
 \begin{document}
+\pagenumbering{roman}
 \begin{titlepage}
 \centering
 {\Large University of Moratuwa\par}
-\vspace{0.5cm}
+\vspace{0.35cm}
 {\large EN3150 - Pattern Recognition\par}
-\vspace{1.2cm}
+\vspace{1.0cm}
 {\Huge\bfseries Assignment 03\par}
-\vspace{0.3cm}
+\vspace{0.25cm}
 {\LARGE\bfseries Resource-Constrained CNN for Edge Image Classification\par}
-\vspace{1.2cm}
+\vspace{1.0cm}
 {\Large\bfseries Group: Draco\par}
 {\large\itshape Dealing with AI from the core\par}
-\vspace{0.9cm}
+\vspace{0.8cm}
 \begin{tabular}{ll}
 \textbf{GUNARATHNA K.T.M.B.} & 230203G\\
 \textbf{JAYAWARDANA K.P.P.} & 230294H\\
@@ -45,125 +44,190 @@
 \textbf{NIMADITH W.N.A.C.} & 230442L\\
 \end{tabular}
 \vfill
-\textbf{GitHub repository:}\\
+\textbf{Repository:}\\
 \url{https://github.com/NavigatorPrime/CNN-Image-Classifier}\\[0.3cm]
-\textbf{Source branch audited:} \texttt{Final}\\
-\textbf{Source commit:} \texttt{3e335db30d025e03ee89ebe7233fa23973e065f1}\\
-\textbf{Corrected working branch:} \texttt{EN3150-A03-Final-Corrected-Report-v2}
+\textbf{Canonical branch:}\\
+\texttt{EN3150-A03-Final-Corrected-Report-v3}
 \vfill
 {\large October 2026\par}
 \end{titlepage}
 
 \tableofcontents
 \clearpage
+\pagenumbering{arabic}
 
-\section{Introduction}
-This assignment investigates image classification under strict edge-computing constraints. The work uses the UCI DeFungi microscopic image dataset and compares two custom convolutional neural networks with two lightweight pre-trained architectures. The central engineering question is not accuracy alone, but how much accuracy is obtained for a given parameter count, checkpoint size, and arithmetic cost.
+\section{Introduction and Measurement Convention}
+This work studies five-class DeFungi image classification under a strict custom-model parameter budget. Two custom CNNs are compared with fine-tuned MobileNetV2 and ShuffleNetV2 1.0x. The final conclusions use only the corrected leakage-free split and the clean-split Stage 2 experiment artifacts.
 
-All final numerical values in this report are taken from the corrected Stage-2 artifacts. Existing Model A, Model B, MobileNetV2, and ShuffleNetV2 checkpoints were preserved; only the missing controlled optimizer-comparison experiment was newly trained. Computational cost is reported using one common convention: Conv2d and Linear multiply-accumulate operations (MACs) for a $3\times64\times64$ input. Batch normalization, activation, pooling, residual additions, concatenation, channel shuffle, softmax, and data movement are excluded. FLOPs are reported as $2\times$ MACs. These are calculated operation counts, not latency measurements.
+Every final metric in this PDF is injected from saved JSON, CSV, classification-report, training-history, checkpoint, or profiler artifacts by \texttt{scripts/generate\_report\_data.py}. No contaminated-split value is used. Computational cost uses one convention for an input of $1\times3\times64\times64$: Conv2d and Linear multiply-accumulate operations (MACs) are counted; BatchNorm, activations, pooling, residual additions, concatenation, channel shuffle, softmax, and data movement are excluded. FLOPs are reported as $2\times$ MACs. These are calculated operation counts, not device latency measurements.
 
 \section{Task 1: Data Preparation}
-\subsection{Dataset and split}
-The selected dataset is \textbf{DeFungi} from the UCI Machine Learning Repository. It contains five fungal classes: H1, H2, H3, H5, and H6. All packaged images are RGB and exactly $64\times64$ pixels, satisfying the assignment's maximum-resolution requirement.
+\subsection{Corrected common split}
+The UCI DeFungi data contain classes H1, H2, H3, H5, and H6. All packaged images are RGB and exactly $64\times64$ pixels. Images were grouped using both raw-file SHA-256 and decoded-pixel SHA-256 before deterministic class-aware allocation. All members of an identical-content group remain in one split.
 
-The packaged split contains 9,114 images:
-\begin{center}
+\begin{table}[H]
+\centering
+\caption{Corrected leakage-free dataset split.}
 \begin{tabular}{lrrrrrr}
 \toprule
 Split & H1 & H2 & H3 & H5 & H6 & Total\\
 \midrule
-Train & 3,082 & 1,633 & 573 & 572 & 517 & 6,377\\
-Validation & 660 & 350 & 122 & 122 & 110 & 1,364\\
-Test & 662 & 351 & 124 & 124 & 112 & 1,373\\
+Train & \HOneTrain & \HTwoTrain & \HThreeTrain & \HFiveTrain & \HSixTrain & \DatasetTrain\\
+Validation & \HOneValidation & \HTwoValidation & \HThreeValidation & \HFiveValidation & \HSixValidation & \DatasetValidation\\
+Test & \HOneTest & \HTwoTest & \HThreeTest & \HFiveTest & \HSixTest & \DatasetTest\\
 \bottomrule
 \end{tabular}
-\end{center}
-This corresponds to approximately 69.97\%, 14.97\%, and 15.06\%, with the small deviation from exact percentages caused by integer class-wise splitting. The same packaged train/validation/test directories are used by all four models.
+\end{table}
+
+The split percentages are \DatasetTrainPct\%, \DatasetValidationPct\%, and \DatasetTestPct\%. The validator found 59 duplicate-content groups inside the dataset but zero raw-byte or decoded-pixel duplicate groups crossing train, validation, and test. The manifest and physical package contain the same \DatasetTotal\ images.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\linewidth]{task1/representative_samples.png}
-\caption{Representative downscaled $64\times64$ samples from the five DeFungi classes.}
+\includegraphics[width=0.92\linewidth]{task1/representative_samples.png}
+\caption{Representative $64\times64$ RGB images from the corrected training split.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.82\linewidth]{task1/class_distribution.png}
-\caption{Class distribution across the common train, validation, and test split. The dataset is imbalanced, with H1 and H2 much more frequent than H3, H5, and H6.}
+\includegraphics[width=0.78\linewidth]{task1/class_distribution.png}
+\caption{Per-class distribution in the corrected common split. H1 and H2 dominate, so macro-averaged metrics are reported alongside accuracy.}
 \end{figure}
 
-\subsection{Preprocessing and reproducibility}
-Training images use resize-to-$64\times64$, random horizontal and vertical flips, random rotation of $\pm15^\circ$, color jitter, conversion to tensors, and ImageNet normalization. Validation and test images use deterministic resize, tensor conversion, and the same normalization without augmentation. The corrected code resolves paths relative to the repository, uses the existing split manifest, and applies an explicit seed for reproducible future runs.
+Training preprocessing uses resize-to-$64\times64$, random horizontal and vertical flips, random rotation of $\pm15^\circ$, color jitter, tensor conversion, and ImageNet normalization. Validation and test preprocessing is deterministic and excludes augmentation. Seed 42 is used for reproducibility.
 
 \section{Task 2: Custom Architecture Design}
-\subsection{Model A: Standard CNN}
-Model A interleaves standard $3\times3$ convolutions with BatchNorm, ReLU, and $2\times2$ max-pooling. Channel width grows from 32 to 256 while spatial resolution is reduced from $64\times64$ to $4\times4$. The classifier is $4096\rightarrow512\rightarrow128\rightarrow5$ with dropout.
-
-The exact trainable parameter count is \textbf{2,553,349}. The corrected calculation is:
-\begin{align*}
-\text{feature extractor} &= 389,376,\\
-\text{classifier} &= 2,163,973,\\
-\text{total} &= 2,553,349.
-\end{align*}
-ReLU is hardware-friendly because it is piecewise linear and avoids transcendental operations such as exponentials. This is advantageous on resource-constrained processors and common integer inference kernels.
-
-\subsection{Model B: Lightweight depthwise-separable CNN}
-Model B contains a small standard stem followed by six depthwise-separable convolution blocks, Global Average Pooling, dropout, and a $128\rightarrow5$ classifier. Each block factorizes a standard convolution into a depthwise $3\times3$ operation and a pointwise $1\times1$ projection.
-
-For a standard convolution with $M$ input channels, $N$ output channels, kernel size $D_K$, and output spatial size $D_G\times D_G$:
-\begin{equation}
-\mathrm{MACs}_{\mathrm{std}}=D_K^2MN D_G^2.
-\end{equation}
-For depthwise separable convolution:
-\begin{equation}
-\mathrm{MACs}_{\mathrm{sep}}=D_K^2M D_G^2 + MN D_G^2.
-\end{equation}
-The ratio is
-\begin{equation}
-\frac{\mathrm{MACs}_{\mathrm{sep}}}{\mathrm{MACs}_{\mathrm{std}}}=\frac{1}{N}+\frac{1}{D_K^2}.
-\end{equation}
-For $3\times3$ kernels, this yields a substantial per-block reduction.
-
-The exact trainable parameter count of Model B is \textbf{37,957}, which is 62.04\% below the assignment ceiling of 100,000 parameters. Relative to Model A, Model B uses \textbf{98.51\% fewer parameters}, or approximately \textbf{67.27$\times$ fewer}. ReLU6 is used as a bounded piecewise-linear activation; its bounded output range can be useful for quantization, while still avoiding expensive transcendental evaluation.
-
-\section{Task 3: Optimizer Selection and Tuning}
-A controlled comparison was run on Model B for 20 epochs using identical initial weights, the same data split, seed 42, batch size 32, cross-entropy loss, augmentation, weight decay ($10^{-4}$), and validation-accuracy checkpoint selection. The compared optimizers were standard SGD, SGD with momentum, and Adam.
+\subsection{Model A: standard CNN}
+Model A is a conventional four-block CNN. Each block uses standard $3\times3$ convolution, BatchNorm, ReLU, and $2\times2$ max pooling. The exact code-derived architecture is shown below.
 
 \begin{table}[H]
 \centering
-\small
-\caption{Controlled optimizer comparison on Model B.}
-\begin{tabular}{lcccccc}
+\scriptsize
+\caption{Model A architecture. ReLU, pooling, flattening, and dropout have no trainable parameters.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllllllrr}
 \toprule
-Optimizer & LR & Momentum & Best Val. Acc. & Best Epoch & Test Acc. & Macro F1\\
+Stage & Layer sequence & Input & Output filters/units & Kernel & Stride/padding & Output shape & Conv/FC & BN\\
 \midrule
-Standard SGD & 0.010 & 0.0 & 67.01\% & 19 & 65.91\% & 0.5770\\
-SGD + Momentum & 0.010 & 0.9 & 70.09\% & 12 & 67.23\% & 0.6356\\
-Adam (selected) & 0.001 & -- & \textbf{72.29\%} & 18 & \textbf{70.14\%} & \textbf{0.6737}\\
+Block 1 & Conv2D, BN, ReLU, MaxPool & $3\times64\times64$ & 32 & $3\times3$; pool $2\times2$ & $1/1$; pool 2 & $32\times32\times32$ & 896 & 64\\
+Block 2 & Conv2D, BN, ReLU, MaxPool & $32\times32\times32$ & 64 & $3\times3$; pool $2\times2$ & $1/1$; pool 2 & $64\times16\times16$ & 18,496 & 128\\
+Block 3 & Conv2D, BN, ReLU, MaxPool & $64\times16\times16$ & 128 & $3\times3$; pool $2\times2$ & $1/1$; pool 2 & $128\times8\times8$ & 73,856 & 256\\
+Block 4 & Conv2D, BN, ReLU, MaxPool & $128\times8\times8$ & 256 & $3\times3$; pool $2\times2$ & $1/1$; pool 2 & $256\times4\times4$ & 295,168 & 512\\
+Flatten & Flatten & $256\times4\times4$ & 4096 & \dash & \dash & 4096 & 0 & 0\\
+FC1 & Linear, ReLU, Dropout(0.5) & 4096 & 512 & \dash & \dash & 512 & 2,097,664 & 0\\
+FC2 & Linear, ReLU, Dropout(0.3) & 512 & 128 & \dash & \dash & 128 & 65,664 & 0\\
+Output & Linear logits & 128 & 5 & \dash & \dash & 5 & 645 & 0\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
+\end{table}
+
+For a biased Conv2D layer,
+\[
+P_{\mathrm{conv}}=(K_hK_wC_{\mathrm{in}}C_{\mathrm{out}})+C_{\mathrm{out}},
+\]
+and trainable BatchNorm contributes $2C_{\mathrm{out}}$ parameters (scale and shift). For example, Block 1 has $(3\cdot3\cdot3\cdot32)+32=896$ convolution parameters and $2\cdot32=64$ BatchNorm parameters. The four blocks total 389,376 parameters. The classifier contributes
+\[
+(4096\cdot512+512)+(512\cdot128+128)+(128\cdot5+5)=2,163,973.
+\]
+Therefore the verified total is $389,376+2,163,973=\mathbf{\ModelAParams}$ trainable parameters.
+
+Model A uses ReLU after each convolutional BatchNorm and after the first two fully connected layers. ReLU is a simple threshold operation, so it avoids the exponential evaluations used by sigmoid and tanh. This is generally favorable for hardware implementation, but no target-device latency is claimed.
+
+\subsection{Model B: depthwise-separable CNN}
+Model B uses one standard convolutional stem followed by six depthwise-separable blocks, global average pooling (GAP), dropout, and a linear classifier. Each block applies depthwise Conv2D, BatchNorm, ReLU6, pointwise Conv2D, BatchNorm, and ReLU6.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\caption{Model B architecture generated from the implementation. Block parameter totals include both convolutions and both BatchNorm layers.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llllllllrr}
+\toprule
+Stage & Input $C$ & DW $C$ & Groups & Kernel & Stride/pad & PW out & Output shape & Parameters & Activation\\
+\midrule
+Stem & 3 & \dash & 1 & $3\times3$ & $1/1$ & 16 & $16\times64\times64$ & 464 & ReLU6\\
+DS Block 1 & 16 & 16 & 16 & $3\times3$ DW, $1\times1$ PW & $2/1$ & 32 & $32\times32\times32$ & 752 & ReLU6 $\times2$\\
+DS Block 2 & 32 & 32 & 32 & $3\times3$ DW, $1\times1$ PW & $1/1$ & 32 & $32\times32\times32$ & 1,440 & ReLU6 $\times2$\\
+DS Block 3 & 32 & 32 & 32 & $3\times3$ DW, $1\times1$ PW & $2/1$ & 64 & $64\times16\times16$ & 2,528 & ReLU6 $\times2$\\
+DS Block 4 & 64 & 64 & 64 & $3\times3$ DW, $1\times1$ PW & $1/1$ & 64 & $64\times16\times16$ & 4,928 & ReLU6 $\times2$\\
+DS Block 5 & 64 & 64 & 64 & $3\times3$ DW, $1\times1$ PW & $2/1$ & 128 & $128\times8\times8$ & 9,152 & ReLU6 $\times2$\\
+DS Block 6 & 128 & 128 & 128 & $3\times3$ DW, $1\times1$ PW & $1/1$ & 128 & $128\times8\times8$ & 18,048 & ReLU6 $\times2$\\
+GAP & 128 & \dash & \dash & global & \dash & 128 & $128\times1\times1$ & 0 & \dash\\
+Dropout & 128 & \dash & \dash & \dash & \dash & 128 & 128 & 0 & \dash\\
+Classifier & 128 & \dash & \dash & \dash & \dash & 5 & 5 logits & 645 & Linear\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+The depthwise and pointwise convolution parameter formulas are
+\[
+P_{\mathrm{DW}}=K_hK_wC_{\mathrm{in}} \quad\text{and}\quad
+P_{\mathrm{PW}}=C_{\mathrm{in}}C_{\mathrm{out}},
+\]
+because both use \texttt{bias=False}. Their BatchNorm terms are $2C_{\mathrm{in}}$ and $2C_{\mathrm{out}}$. Thus a complete block has
+\[
+P_{\mathrm{block}}=9C_{\mathrm{in}}+2C_{\mathrm{in}}+C_{\mathrm{in}}C_{\mathrm{out}}+2C_{\mathrm{out}}.
+\]
+For Block 1 this is $144+32+512+64=752$. For Block 2, whose output width is also 32, it is $288+64+1024+64=1,440$. The stem has $3\cdot16\cdot9+2\cdot16=464$ parameters and the classifier has $128\cdot5+5=645$. Summing every row gives:
+\[
+\boxed{\text{Model B trainable parameters}=\ModelBParams<100,000.}
+\]
+
+For convolutional arithmetic alone, the depthwise-separable to standard-convolution ratio is $1/C_{\mathrm{out}}+1/9$. It is 14.24\% for the 16-to-32 and 32-to-32 blocks, and decreases for 64- and 128-output blocks. This comparison excludes BatchNorm and activation work, consistent with the project MAC convention.
+
+Model B uses ReLU6 after the stem and after both convolution stages in every separable block. ReLU6 adds an upper clamp to ReLU's lower threshold; both remain simple piecewise-linear operations without exponential functions. The final classifier is strictly linear and produces five logits directly for \texttt{CrossEntropyLoss}; no output ReLU6 or softmax layer is applied in the model.
+
+\section{Task 3: Optimizer Selection and Tuning}
+\subsection{Controlled comparison}
+The three Model B trials used the exact same corrected split, initial-state hash, seed 42, batch size 32, augmentation, cross-entropy loss, weight decay $10^{-4}$, and highest-validation-accuracy checkpoint rule. Each ran for 20 epochs. All used \texttt{ReduceLROnPlateau} on validation loss with factor 0.5 and patience 4; the learning rate did not reduce during these runs.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\caption{Controlled clean-split optimizer comparison.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Optimizer & LR & Momentum & Best val. acc. & Epoch & Final train loss & Final val. loss & Test loss & Test acc.\\
+\midrule
+Standard SGD & \SGDLearningRate & \SGDMomentum & \SGDBestVal\% & \SGDBestEpoch & \SGDFinalTrainLoss & \SGDFinalValLoss & \SGDTestLoss & \SGDTestAccuracy\%\\
+SGD + Momentum & \MomentumLearningRate & \MomentumMomentum & \MomentumBestVal\% & \MomentumBestEpoch & \MomentumFinalTrainLoss & \MomentumFinalValLoss & \MomentumTestLoss & \MomentumTestAccuracy\%\\
+Adam & \AdamLearningRate & \AdamMomentum & \textbf{\AdamBestVal\%} & \AdamBestEpoch & \textbf{\AdamFinalTrainLoss} & \textbf{\AdamFinalValLoss} & \textbf{\AdamTestLoss} & \textbf{\AdamTestAccuracy\%}\\
+\bottomrule
+\end{tabular}}
 \end{table}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{task3/optimizer_comparison_curves.png}
-\caption{Controlled Task-3 optimizer comparison. Momentum accelerates SGD convergence and improves the final metrics, while Adam provides the strongest overall validation and test performance in this experiment.}
+\caption{Training loss, validation loss, and validation accuracy for the controlled 20-epoch optimizer comparison.}
 \end{figure}
 
-Momentum updates the running direction using a velocity term. A common form is
-\begin{align*}
-v_t &= \mu v_{t-1}+g_t,\\
-\theta_{t+1} &= \theta_t-\eta v_t,
-\end{align*}
-where $\mu$ is the momentum coefficient. In the experiment, SGD with momentum reached 66.28\% validation accuracy by epoch 2 and peaked at 70.09\% by epoch 12, while standard SGD reached a lower 67.01\% peak only at epoch 19. Thus, momentum provided faster convergence and better final performance under the controlled setup. Adam was selected because it obtained the best validation accuracy, test accuracy, and macro F1.
+\subsection{Momentum effect}
+Momentum accumulates a velocity in directions supported by successive gradients:
+\[
+v_t=\mu v_{t-1}+g_t,\qquad \theta_{t+1}=\theta_t-\eta v_t.
+\]
+This can reduce oscillation and accelerate progress along consistent directions. The corrected curves support that interpretation: by epoch 10, SGD with momentum reached \MomentumEpochTenVal\% validation accuracy compared with \SGDEpochTenVal\% for plain SGD. Momentum also achieved a higher best validation accuracy (\MomentumBestVal\% versus \SGDBestVal\%), lower final validation loss (\MomentumFinalValLoss{} versus \SGDFinalValLoss), and higher test accuracy (\MomentumTestAccuracy\% versus \SGDTestAccuracy\%).
+
+\subsection{Why Adam and learning rate 0.001 were selected}
+Adam was selected because it produced the strongest controlled result within the fixed 20-epoch budget: \AdamBestVal\% best validation accuracy, \AdamTestAccuracy\% test accuracy, and macro F1 \AdamFOne. These exceed both plain SGD and SGD with momentum. Its curves also show useful progress throughout training, reaching \AdamEpochTenVal\% validation accuracy by epoch 10 and the best checkpoint at epoch \AdamBestEpoch. Adam combines momentum-like first-moment estimation with second-moment scaling, adapting the effective step size for each parameter. This reduces the amount of manual gradient-scale tuning required by plain SGD, while the conclusion here remains grounded in the measured comparison rather than optimizer theory alone.
+
+The base learning rate 0.001 is a standard practical starting point for Adam and is smaller than the 0.01 used for the SGD variants. Because Adam rescales updates with first- and second-moment estimates, this smaller base rate helps avoid excessively large parameter updates while still permitting progress. In the corrected experiment it produced stable decreasing losses and the best validation result within 20 epochs. The plateau scheduler was configured but did not need to lower the rate, so all recorded Adam epochs used 0.001.
 
 \section{Task 4: Custom Model Training and Evaluation}
-Both custom networks were trained for 20 epochs, meeting the assignment requirement. Their main Task-4 runs are independent of the controlled Task-3 optimizer experiment.
+Both canonical custom-model runs used the corrected split for 20 epochs and evaluated the test set only after restoring the selected checkpoint.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{task4/custom_model_training_curves.png}
-\caption{Training and validation curves for Model A and Model B over the 20-epoch custom-model experiments.}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{task4/model_a_training_curves.png}
+\caption{Model A.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{task4/model_b_training_curves.png}
+\caption{Model B.}
+\end{subfigure}
+\caption{Training and validation loss and accuracy for the two custom models.}
 \end{figure}
 
 \begin{figure}[H]
@@ -171,45 +235,48 @@ Both custom networks were trained for 20 epochs, meeting the assignment requirem
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task4/model_a_confusion_matrix.png}
 \caption{Model A.}
-\end{subfigure}
-\hfill
+\end{subfigure}\hfill
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task4/model_b_confusion_matrix.png}
 \caption{Model B.}
 \end{subfigure}
-\caption{Test-set confusion matrices for the two custom networks.}
+\caption{Corrected test-set confusion matrices; each totals \DatasetTest\ images.}
 \end{figure}
 
 \begin{table}[H]
 \centering
-\small
-\caption{Model A vs Model B comparison. Checkpoint sizes are actual PyTorch file sizes.}
-\begin{tabular}{lcc}
+\scriptsize
+\caption{Canonical clean-split custom-model results. Checkpoint sizes use binary MiB/KiB.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrrrrrr}
 \toprule
-Metric & Model A & Model B\\
+Model & Params & Size & Test loss & Test acc. & Macro P & Macro R & Macro F1 & Total time & Time/ep & MACs & FLOPs\\
 \midrule
-Trainable parameters & 2,553,349 & 37,957\\
-Checkpoint size & 9.755 MiB & 180.16 KiB\\
-FP32 parameter storage & 9.740 MiB & 148.27 KiB\\
-Avg. training time / epoch & 29.44 s & 21.71 s\\
-Test accuracy & 68.90\% & 70.43\%\\
-Macro precision & 0.7249 & 0.7113\\
-Macro recall & 0.6379 & 0.6824\\
-Macro F1 & 0.6597 & 0.6927\\
-Calculated MACs & 62.33 M & 7.26 M\\
+Model A & \ModelAParams & \ModelASizeMiB\ MiB & \ModelATestLoss & \ModelAAccuracy\% & \ModelAPrecision & \ModelARecall & \ModelAFOne & \ModelATotalTime\ s & \ModelAEpochTime\ s & \ModelAMACs\ M & \ModelAFLOPs\ M\\
+Model B & \ModelBParams & \ModelBSizeKiB\ KiB & \ModelBTestLoss & \ModelBAccuracy\% & \ModelBPrecision & \ModelBRecall & \ModelBFOne & \ModelBTotalTime\ s & \ModelBEpochTime\ s & \ModelBMACs\ M & \ModelBFLOPs\ M\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
-Model B improves test accuracy by 1.53 percentage points while reducing the parameter count by 98.51\% and the Conv/Linear MAC count by approximately 88.35\%. Its macro F1 also improves from 0.6597 to 0.6927. The main weakness in both custom models is H2, but Model B raises H2 recall from 0.2336 to 0.4387, reducing the severe bias toward H1 seen in Model A.
+\subsection{Model A versus Model B trade-off}
+Model B achieved \ModelBAccuracyGainVsA{} percentage points higher test accuracy and a higher macro F1 (\ModelBFOne{} versus \ModelAFOne) despite being dramatically smaller. It uses \ModelBParamReductionVsA\% fewer parameters, or \ModelBParamFactorVsA$\times$ fewer, and \ModelBMACReductionVsA\% fewer calculated MACs. Its checkpoint is \ModelBSizeKiB\ KiB compared with \ModelASizeMiB\ MiB for Model A, and its average training epoch was shorter in this environment.
 
-\section{Task 5: Lightweight SOTA Fine-Tuning and Evaluation}
-The two selected lightweight pre-trained models are MobileNetV2 and ShuffleNetV2 1.0x. Both start from torchvision ImageNet weights, replace the 1000-class head with a five-class head, and are fully fine-tuned on the same DeFungi split for 20 epochs using Adam with learning rate $5\times10^{-4}$ and weight decay $10^{-4}$.
+Model A remains a useful conventional baseline: standard convolutions and a large fully connected head offer greater nominal representational capacity and are straightforward to explain. In this experiment, however, that capacity did not produce higher clean-split accuracy. Model B's depthwise-separable blocks, global pooling, much smaller storage footprint, and lower arithmetic count make it more attractive for resource-constrained exploration. This does not prove deployment feasibility: checkpoint storage, parameter count, calculated MACs, runtime activation RAM, and measured inference latency are different quantities. Peak RAM and device latency were not measured.
+
+\section{Task 5: Lightweight Pre-trained Models}
+MobileNetV2 used \path{torchvision.models.MobileNet_V2_Weights.DEFAULT}; ShuffleNetV2 1.0x used \path{ShuffleNet_V2_X1_0_Weights.DEFAULT}. Each ImageNet classifier was replaced with a five-class Linear layer and all parameters were fine-tuned on the same corrected split for 20 epochs. Training used Adam with base learning rate $5\times10^{-4}$, weight decay $10^{-4}$, and \texttt{ReduceLROnPlateau} on validation loss. The lowest-validation-loss checkpoint was evaluated.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{task5/sota_training_curves.png}
-\caption{Training and validation curves for MobileNetV2 and ShuffleNetV2.}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{task5/mobilenet_v2_training_curves.png}
+\caption{MobileNetV2.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{task5/shufflenet_v2_training_curves.png}
+\caption{ShuffleNetV2 1.0x.}
+\end{subfigure}
+\caption{Fine-tuning and validation curves for the two pre-trained models.}
 \end{figure}
 
 \begin{figure}[H]
@@ -217,141 +284,99 @@ The two selected lightweight pre-trained models are MobileNetV2 and ShuffleNetV2
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task5/mobilenet_v2_confusion_matrix.png}
 \caption{MobileNetV2.}
-\end{subfigure}
-\hfill
+\end{subfigure}\hfill
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task5/shufflenet_v2_confusion_matrix.png}
 \caption{ShuffleNetV2 1.0x.}
 \end{subfigure}
-\caption{Test-set confusion matrices for the two fine-tuned lightweight pre-trained models.}
+\caption{Corrected test-set confusion matrices for the fine-tuned models.}
 \end{figure}
 
 \begin{table}[H]
 \centering
-\small
-\caption{Lightweight SOTA comparison.}
-\begin{tabular}{lrrrrrr}
+\scriptsize
+\caption{Canonical clean-split Task 5 results.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrrrrr}
 \toprule
-Model & Params & Size & Test Acc. & Macro F1 & Time/ep & MACs\\
+Model & Params & Size & Loss & Accuracy & Macro P & Macro R & Macro F1 & Total time & Time/ep & MACs/FLOPs\\
 \midrule
-MobileNetV2 & 2,230,277 & 8.740 MiB & \textbf{86.31\%} & \textbf{0.8805} & 40.90 s & 24.45 M\\
-ShuffleNetV2 1.0x & 1,258,729 & 4.966 MiB & 83.76\% & 0.8590 & \textbf{20.59 s} & \textbf{11.75 M}\\
+MobileNetV2 & \MobileParams & \MobileSizeMiB\ MiB & \MobileTestLoss & \MobileAccuracy\% & \MobilePrecision & \MobileRecall & \MobileFOne & \MobileTotalTime\ s & \MobileEpochTime\ s & \MobileMACs/\MobileFLOPs\ M\\
+ShuffleNetV2 1.0x & \ShuffleParams & \ShuffleSizeMiB\ MiB & \ShuffleTestLoss & \ShuffleAccuracy\% & \ShufflePrecision & \ShuffleRecall & \ShuffleFOne & \ShuffleTotalTime\ s & \ShuffleEpochTime\ s & \ShuffleMACs/\ShuffleFLOPs\ M\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
-MobileNetV2 provides the strongest classification result, while ShuffleNetV2 provides a better efficiency point among the two SOTA models. The improvement is especially visible on H2: Model B's H2 recall is 0.4387, ShuffleNetV2 reaches approximately 0.66, and MobileNetV2 approximately 0.77.
+MobileNetV2 gives the highest accuracy and macro F1. ShuffleNetV2 is smaller and uses fewer MACs while still substantially outperforming Model B. Pre-training likely contributes reusable visual representations, but the advantage cannot be assigned to pre-training alone because architecture and capacity also differ.
 
 \section{Task 6: Final Comparison and Trade-off Discussion}
-\subsection{Accuracy}
-The main final comparison is Model B vs ShuffleNetV2 vs MobileNetV2.
-
+\subsection{Accuracy, storage, and computation}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.78\linewidth]{task6/test_accuracy_comparison.png}
-\caption{Test accuracy comparison for the resource-constrained custom model and the two fine-tuned SOTA models.}
+\includegraphics[width=0.72\linewidth]{task6/test_accuracy_comparison.png}
+\caption{Corrected test accuracy for Model B and the two fine-tuned pre-trained models.}
 \end{figure}
 
-MobileNetV2 improves on Model B by \textbf{15.88 percentage points}; ShuffleNetV2 improves by \textbf{13.33 percentage points}. Transfer learning therefore provides a large performance advantage on this low-resolution microscopic dataset.
+MobileNetV2 improves on Model B by \MobileAccuracyGainVsB{} percentage points; ShuffleNetV2 improves by \ShuffleAccuracyGainVsB{} points. Their H2 recalls are \MobileHTwoRecall{} and \ShuffleHTwoRecall, compared with \ModelBHTwoRecall{} for Model B.
 
-\subsection{Memory footprint}
 \begin{figure}[H]
 \centering
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task6/parameter_count_comparison.png}
 \caption{Trainable parameters.}
-\end{subfigure}
-\hfill
+\end{subfigure}\hfill
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task6/model_size_comparison.png}
-\caption{Checkpoint file size.}
+\caption{Checkpoint storage in MiB.}
 \end{subfigure}
-\caption{Memory-related model comparisons. Log scales are used because of the large size ratios.}
+\caption{Parameter and actual checkpoint-size comparisons. Log scales expose the large ratios.}
 \end{figure}
 
-Relative to Model B, ShuffleNetV2 has approximately \textbf{33.16$\times$} as many parameters and a \textbf{28.23$\times$} larger checkpoint. MobileNetV2 has approximately \textbf{58.76$\times$} as many parameters and a \textbf{49.68$\times$} larger checkpoint.
+Relative to Model B, MobileNetV2 has \MobileParamFactorVsB$\times$ the parameters and a \MobileSizeFactorVsB$\times$ larger checkpoint. ShuffleNetV2 has \ShuffleParamFactorVsB$\times$ the parameters and a \ShuffleSizeFactorVsB$\times$ larger checkpoint.
 
-Checkpoint size is not equivalent to deployment RAM. Runtime activation buffers, framework overhead, operator implementations, quantization, and allocator behavior also affect peak memory. Consequently, this report does not claim that Model B is guaranteed to fit a particular microcontroller from checkpoint size alone.
-
-\subsection{Computational cost}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.78\linewidth]{task6/mac_comparison.png}
-\caption{Calculated Conv/Linear MACs for a $3\times64\times64$ input.}
+\includegraphics[width=0.72\linewidth]{task6/mac_comparison.png}
+\caption{Calculated Conv2d/Linear MACs per $64\times64$ image.}
 \end{figure}
 
-Model B requires approximately 7.26 M MACs, compared with 11.75 M for ShuffleNetV2 and 24.45 M for MobileNetV2. ShuffleNet therefore uses approximately \textbf{1.62$\times$} the MACs of Model B, while MobileNetV2 uses approximately \textbf{3.37$\times$}. No controlled device-level inference latency was measured, so training time per epoch is not presented as inference latency.
+MobileNetV2 uses \MobileMACFactorVsB$\times$ Model B's MAC count and ShuffleNetV2 uses \ShuffleMACFactorVsB$\times$. Model B is therefore the lowest-cost custom option, whereas the pre-trained models combine larger capacity, different efficient building blocks, and learned ImageNet representations to obtain higher accuracy.
 
 \subsection{Accuracy-efficiency frontier}
 \begin{figure}[H]
 \centering
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task6/accuracy_vs_model_size.png}
-\caption{Accuracy vs checkpoint size.}
-\end{subfigure}
-\hfill
+\caption{Accuracy versus checkpoint size.}
+\end{subfigure}\hfill
 \begin{subfigure}{0.49\linewidth}\centering
 \includegraphics[width=\linewidth]{task6/accuracy_vs_macs.png}
-\caption{Accuracy vs calculated MACs.}
+\caption{Accuracy versus MACs.}
 \end{subfigure}
-\caption{Accuracy-efficiency trade-offs. The dashed line marks the non-dominated Pareto frontier; Model A is dominated by Model B because Model B is both smaller and more accurate.}
+\caption{Corrected accuracy-efficiency trade-offs. Model A is dominated by Model B; the remaining three models provide distinct resource/accuracy operating points.}
 \end{figure}
 
-Model B, ShuffleNetV2, and MobileNetV2 occupy different non-dominated operating points. Model B minimizes resource demand. ShuffleNetV2 sacrifices some accuracy relative to MobileNetV2 but offers substantially lower parameters, storage, and MACs. MobileNetV2 maximizes accuracy at the highest resource cost among the three.
-
-\subsection{Advantages and limitations of Model B}
-\textbf{Advantages:}
-\begin{itemize}[nosep]
-\item Strictly satisfies the sub-100k trainable-parameter requirement.
-\item Very small checkpoint and low calculated arithmetic cost.
-\item Simple depthwise-separable building blocks and global average pooling reduce dense-layer overhead.
-\item Does not depend on ImageNet pre-training.
+\subsection{Engineering recommendations}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Strictest parameter, storage, or arithmetic budget: Model B.} It is trained from scratch, contains only \ModelBParams{} parameters, and has the smallest checkpoint and MAC count. Quantization, peak-RAM profiling, operator support, and on-device latency must still be measured.
+\item \textbf{Balanced accuracy and resource cost: ShuffleNetV2 1.0x.} It reaches \ShuffleAccuracy\% accuracy with substantially fewer parameters, checkpoint storage, and MACs than MobileNetV2.
+\item \textbf{Accuracy-first choice: MobileNetV2.} It reaches \MobileAccuracy\% accuracy and macro F1 \MobileFOne, the strongest measured classification result, with the highest compute cost among the three final candidates.
 \end{itemize}
 
-\textbf{Limitations:}
-\begin{itemize}[nosep]
-\item Lower test accuracy than both fine-tuned SOTA models.
-\item Lower representational capacity because of the aggressive parameter budget.
-\item Training from scratch must learn both low-level and task-specific features from the comparatively small DeFungi dataset.
-\item H2 remains the most difficult major class, with recall 0.4387 in the main Model-B run.
-\end{itemize}
+\section{Conclusion}
+On the leakage-free split, Model B outperforms the much larger conventional Model A while using \ModelBParamReductionVsA\% fewer parameters and \ModelBMACReductionVsA\% fewer MACs. MobileNetV2 and ShuffleNetV2 produce considerably higher classification performance, but their advantage accompanies greater capacity, different architectures, and ImageNet pre-training. The correct engineering choice depends on the real storage, RAM, latency, energy, and accuracy constraints; this work measures checkpoint storage and training time and calculates MACs, but does not claim unmeasured MCU RAM or latency.
 
-\subsection{Advantages and limitations of pre-trained SOTA models}
-\textbf{Advantages:}
-\begin{itemize}[nosep]
-\item ImageNet pre-training supplies reusable low-level and mid-level visual features.
-\item Both SOTA models substantially improve test accuracy and macro F1.
-\item MobileNetV2 gives the highest accuracy; ShuffleNetV2 offers a strong middle point between accuracy and resource cost.
-\end{itemize}
+\section*{Reproducibility and Submission Reminder}
+All seven experiments use the same package SHA-256 and manifest SHA-256 recorded in their JSON metadata. Every history contains 20 epochs, every confusion matrix totals \DatasetTest, and cross-split duplicate content equals zero. Canonical artifacts are under \texttt{results\_clean\_split/}; the older \texttt{results/} tree is historical only.
 
-\textbf{Limitations:}
-\begin{itemize}[nosep]
-\item Much larger parameter and storage footprints than Model B.
-\item Higher calculated arithmetic cost.
-\item Pre-training creates a domain-transfer dependency: ImageNet features are useful, but the source domain differs from microscopic fungi.
-\item Actual edge-device feasibility still depends on peak activation memory, operator support, quantization, and measured latency.
-\end{itemize}
-
-\subsection{Deployment recommendations}
-\begin{itemize}
-\item \textbf{Strictest memory/compute budget:} choose Model B. It is the only custom sub-100k model and has the lowest MAC count and checkpoint size. Before claiming deployment on a specific MCU, perform quantization, peak-RAM profiling, and an on-device latency test.
-\item \textbf{Balanced accuracy and efficiency:} choose ShuffleNetV2 1.0x. It improves accuracy by 13.33 percentage points over Model B with substantially less storage and MAC cost than MobileNetV2.
-\item \textbf{Accuracy-first edge deployment:} choose MobileNetV2. It reaches 86.31\% test accuracy and macro F1 0.8805, at the cost of the largest checkpoint and highest MAC count among the three final candidates.
-\end{itemize}
-
-\section{Overall Conclusion}
-The experiments demonstrate that depthwise-separable design can reduce resource cost dramatically without necessarily reducing accuracy. Model B is 98.51\% smaller in parameter count than Model A, requires about 7.26 M Conv/Linear MACs, and slightly improves both test accuracy and macro F1. However, transfer learning changes the accuracy-efficiency frontier: MobileNetV2 reaches 86.31\% test accuracy and ShuffleNetV2 reaches 83.76\%, versus 70.43\% for Model B.
-
-The correct engineering choice therefore depends on the deployment constraint. Model B is the strongest candidate when model capacity must remain extremely small; ShuffleNetV2 is the most attractive compromise when moderate resources are available; and MobileNetV2 is preferred when accuracy dominates the resource budget. These conclusions are based on verified checkpoint sizes, measured test metrics, and consistently calculated MAC counts. Device-specific latency and peak runtime RAM remain future deployment measurements rather than assumed results.
-
-\section*{Reproducibility Notes}
-The corrected code includes repository-relative paths, explicit seed handling, the packaged split manifest, a dedicated Task-3 optimizer-comparison script, and a common computational profiling script. Existing valid Task-4 and Task-5 checkpoints were left unchanged.
+The assignment's dataset information sheet is external to this GitHub repository. The group must update and submit that external sheet separately; this report does not claim it has been completed.
 
 \begin{thebibliography}{9}
-\bibitem{defungi} UCI Machine Learning Repository, \textit{DeFungi}, Dataset ID 773. \url{https://archive.ics.uci.edu/dataset/773/defungi}.
-\bibitem{mobilenetv2} M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, ``MobileNetV2: Inverted Residuals and Linear Bottlenecks,'' \textit{Proc. CVPR}, 2018.
-\bibitem{shufflenetv2} N. Ma, X. Zhang, H.-T. Zheng, and J. Sun, ``ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design,'' \textit{Proc. ECCV}, 2018.
-\bibitem{pytorch} PyTorch / Torchvision model implementations and pre-trained weights documentation, \url{https://pytorch.org/vision/stable/models.html}.
+\bibitem{defungi} UCI Machine Learning Repository, \textit{DeFungi}, Dataset 773. \url{https://archive.ics.uci.edu/dataset/773/defungi}.
+\bibitem{mobilenetv2} M. Sandler et al., ``MobileNetV2: Inverted Residuals and Linear Bottlenecks,'' \textit{CVPR}, 2018.
+\bibitem{shufflenetv2} N. Ma et al., ``ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design,'' \textit{ECCV}, 2018.
+\bibitem{adam} D. P. Kingma and J. Ba, ``Adam: A Method for Stochastic Optimization,'' \textit{ICLR}, 2015.
+\bibitem{pytorch} PyTorch and Torchvision model implementations, \url{https://pytorch.org/vision/stable/models.html}.
 \end{thebibliography}
 
 \end{document}

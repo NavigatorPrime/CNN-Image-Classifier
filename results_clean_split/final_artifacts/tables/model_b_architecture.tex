@@ -1,0 +1,16 @@
+\begin{tabular}{llrlllllrlrl}
+\toprule
+Stage & Layer sequence & Input channels & Depthwise channels & Groups & Kernel & Stride & Padding & Pointwise output & Output & Trainable parameters & Parameter detail \\
+\midrule
+Stem & Conv2D -> BatchNorm -> ReLU6 & 3 & - & 1 & 3x3 & 1 & 1 & 16 & 16x64x64 & 464 & Conv 432 + BN 32 \\
+DS Block 1 & DW Conv -> BN -> ReLU6; PW Conv -> BN -> ReLU6 & 16 & 16 & 16 & 3x3 DW; 1x1 PW & 2 & 1 & 32 & 32x32x32 & 752 & DW 144 + BN 32 + PW 512 + BN 64 \\
+DS Block 2 & DW Conv -> BN -> ReLU6; PW Conv -> BN -> ReLU6 & 32 & 32 & 32 & 3x3 DW; 1x1 PW & 1 & 1 & 32 & 32x32x32 & 1440 & DW 288 + BN 64 + PW 1,024 + BN 64 \\
+DS Block 3 & DW Conv -> BN -> ReLU6; PW Conv -> BN -> ReLU6 & 32 & 32 & 32 & 3x3 DW; 1x1 PW & 2 & 1 & 64 & 64x16x16 & 2528 & DW 288 + BN 64 + PW 2,048 + BN 128 \\
+DS Block 4 & DW Conv -> BN -> ReLU6; PW Conv -> BN -> ReLU6 & 64 & 64 & 64 & 3x3 DW; 1x1 PW & 1 & 1 & 64 & 64x16x16 & 4928 & DW 576 + BN 128 + PW 4,096 + BN 128 \\
+DS Block 5 & DW Conv -> BN -> ReLU6; PW Conv -> BN -> ReLU6 & 64 & 64 & 64 & 3x3 DW; 1x1 PW & 2 & 1 & 128 & 128x8x8 & 9152 & DW 576 + BN 128 + PW 8,192 + BN 256 \\
+DS Block 6 & DW Conv -> BN -> ReLU6; PW Conv -> BN -> ReLU6 & 128 & 128 & 128 & 3x3 DW; 1x1 PW & 1 & 1 & 128 & 128x8x8 & 18048 & DW 1,152 + BN 256 + PW 16,384 + BN 256 \\
+GAP & AdaptiveAvgPool2D(1x1) & 128 & - & - & global & - & - & 128 & 128x1x1 & 0 & No trainable parameters \\
+Dropout & Dropout(0.2) & 128 & - & - & - & - & - & 128 & 128 & 0 & No trainable parameters \\
+Classifier & Linear logits & 128 & - & - & - & - & - & 5 & 5 & 645 & 128x5+5 \\
+\bottomrule
+\end{tabular}

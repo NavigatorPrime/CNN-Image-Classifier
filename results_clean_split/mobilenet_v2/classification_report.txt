@@ -1,0 +1,24 @@
+Model: MobileNetV2
+Total Parameters: 2,230,277
+Checkpoint Size on Disk: 8.74 MiB
+Test Accuracy: 86.09%
+Test Loss: 0.3581
+
+Best Epoch: 18
+Best Validation Loss: 0.362148
+Macro Precision: 0.882439
+Macro Recall: 0.882496
+Macro F1: 0.882215
+Training Time: 753.41s (37.66s/epoch)
+
+              precision    recall  f1-score   support
+
+          H1       0.88      0.88      0.88       660
+          H2       0.77      0.76      0.76       350
+          H3       0.88      0.90      0.89       123
+          H5       0.91      0.95      0.93       122
+          H6       0.97      0.92      0.94       111
+
+    accuracy                           0.86      1366
+   macro avg       0.88      0.88      0.88      1366
+weighted avg       0.86      0.86      0.86      1366

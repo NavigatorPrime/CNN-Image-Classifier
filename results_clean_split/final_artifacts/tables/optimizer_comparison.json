@@ -1,0 +1,44 @@
+[
+  {
+    "Optimizer":"Standard SGD",
+    "Learning Rate":0.01,
+    "Momentum":0.0,
+    "Best Epoch":18,
+    "Best Val Accuracy (%)":66.0087719298,
+    "Final Train Loss":0.896086093,
+    "Final Validation Loss":0.8383693507,
+    "Test Accuracy (%)":65.6661786237,
+    "Macro Precision":0.6704713143,
+    "Macro Recall":0.5718515863,
+    "Macro F1":0.5843831155,
+    "Avg Epoch Time (s)":12.0520422821
+  },
+  {
+    "Optimizer":"SGD + Momentum",
+    "Learning Rate":0.01,
+    "Momentum":0.9,
+    "Best Epoch":18,
+    "Best Val Accuracy (%)":70.5409356725,
+    "Final Train Loss":0.7938312411,
+    "Final Validation Loss":0.7165283264,
+    "Test Accuracy (%)":68.8140556369,
+    "Macro Precision":0.672336174,
+    "Macro Recall":0.6593990608,
+    "Macro F1":0.6562979342,
+    "Avg Epoch Time (s)":11.9867032507
+  },
+  {
+    "Optimizer":"Adam (selected)",
+    "Learning Rate":0.001,
+    "Momentum":null,
+    "Best Epoch":20,
+    "Best Val Accuracy (%)":73.2456140351,
+    "Final Train Loss":0.7510469947,
+    "Final Validation Loss":0.6671483539,
+    "Test Accuracy (%)":70.5710102489,
+    "Macro Precision":0.7416114507,
+    "Macro Recall":0.6606332651,
+    "Macro F1":0.6800462889,
+    "Avg Epoch Time (s)":12.3118499555
+  }
+]

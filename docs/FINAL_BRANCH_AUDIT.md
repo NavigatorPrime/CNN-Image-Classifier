@@ -1,5 +1,10 @@
 # EN3150 Assignment 03 — Final Branch Audit
 
+> **Superseded audit:** This document records an earlier branch review and its
+> dataset conclusions are no longer valid. See `DATASET_SPLIT_AUDIT.md` for the
+> Stage 1 leakage finding and corrected split. All recorded model results below
+> are historical pending retraining.
+
 **Repository:** `NavigatorPrime/CNN-Image-Classifier`  
 **Audited branch:** `Final`  
 **Audited commit:** `3e335db30d025e03ee89ebe7233fa23973e065f1`  

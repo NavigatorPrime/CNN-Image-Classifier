@@ -1,6 +1,6 @@
 Model: MobileNetV2
 Total Parameters: 2,230,277
-Model Size on Disk: 8.74 MB
+Checkpoint Size on Disk: 8.74 MiB
 Test Accuracy: 86.31%
 Test Loss: 0.4092
 

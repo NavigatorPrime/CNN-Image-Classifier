@@ -1,0 +1,1512 @@
+{
+  "status": "calculated; not latency",
+  "convention": {
+    "input": "1x3x64x64",
+    "included": "Conv2d and Linear multiply-accumulates",
+    "excluded": "BatchNorm, activations, pooling, residual additions, concatenation, channel shuffle, softmax and data movement",
+    "flops": "2 FLOPs per MAC"
+  },
+  "models": {
+    "Model A": {
+      "input_shape": [
+        1,
+        3,
+        64,
+        64
+      ],
+      "output_shape": [
+        1,
+        5
+      ],
+      "total_parameters": 2553349,
+      "trainable_parameters": 2553349,
+      "macs": 62325376,
+      "flops_2_per_mac": 124650752,
+      "layers": [
+        {
+          "layer": "features.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            64,
+            64
+          ],
+          "macs": 3538944
+        },
+        {
+          "layer": "features.4",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            32,
+            32
+          ],
+          "macs": 18874368
+        },
+        {
+          "layer": "features.8",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            128,
+            16,
+            16
+          ],
+          "macs": 18874368
+        },
+        {
+          "layer": "features.12",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            256,
+            8,
+            8
+          ],
+          "macs": 18874368
+        },
+        {
+          "layer": "classifier.1",
+          "type": "Linear",
+          "output_shape": [
+            1,
+            512
+          ],
+          "macs": 2097152
+        },
+        {
+          "layer": "classifier.4",
+          "type": "Linear",
+          "output_shape": [
+            1,
+            128
+          ],
+          "macs": 65536
+        },
+        {
+          "layer": "classifier.7",
+          "type": "Linear",
+          "output_shape": [
+            1,
+            5
+          ],
+          "macs": 640
+        }
+      ]
+    },
+    "Model B": {
+      "input_shape": [
+        1,
+        3,
+        64,
+        64
+      ],
+      "output_shape": [
+        1,
+        5
+      ],
+      "total_parameters": 37957,
+      "trainable_parameters": 37957,
+      "macs": 7262848,
+      "flops_2_per_mac": 14525696,
+      "layers": [
+        {
+          "layer": "stem.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            16,
+            64,
+            64
+          ],
+          "macs": 1769472
+        },
+        {
+          "layer": "block1.depthwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            16,
+            32,
+            32
+          ],
+          "macs": 147456
+        },
+        {
+          "layer": "block1.pointwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            32,
+            32
+          ],
+          "macs": 524288
+        },
+        {
+          "layer": "block2.depthwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            32,
+            32
+          ],
+          "macs": 294912
+        },
+        {
+          "layer": "block2.pointwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            32,
+            32
+          ],
+          "macs": 1048576
+        },
+        {
+          "layer": "block3.depthwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            16,
+            16
+          ],
+          "macs": 73728
+        },
+        {
+          "layer": "block3.pointwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            16,
+            16
+          ],
+          "macs": 524288
+        },
+        {
+          "layer": "block4.depthwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            16,
+            16
+          ],
+          "macs": 147456
+        },
+        {
+          "layer": "block4.pointwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            16,
+            16
+          ],
+          "macs": 1048576
+        },
+        {
+          "layer": "block5.depthwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            8,
+            8
+          ],
+          "macs": 36864
+        },
+        {
+          "layer": "block5.pointwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            128,
+            8,
+            8
+          ],
+          "macs": 524288
+        },
+        {
+          "layer": "block6.depthwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            128,
+            8,
+            8
+          ],
+          "macs": 73728
+        },
+        {
+          "layer": "block6.pointwise",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            128,
+            8,
+            8
+          ],
+          "macs": 1048576
+        },
+        {
+          "layer": "classifier",
+          "type": "Linear",
+          "output_shape": [
+            1,
+            5
+          ],
+          "macs": 640
+        }
+      ]
+    },
+    "MobileNetV2": {
+      "input_shape": [
+        1,
+        3,
+        64,
+        64
+      ],
+      "output_shape": [
+        1,
+        5
+      ],
+      "total_parameters": 2230277,
+      "trainable_parameters": 2230277,
+      "macs": 24454912,
+      "flops_2_per_mac": 48909824,
+      "layers": [
+        {
+          "layer": "features.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            32,
+            32
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.1.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            32,
+            32
+          ],
+          "macs": 294912
+        },
+        {
+          "layer": "features.1.conv.1",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            16,
+            32,
+            32
+          ],
+          "macs": 524288
+        },
+        {
+          "layer": "features.2.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            96,
+            32,
+            32
+          ],
+          "macs": 1572864
+        },
+        {
+          "layer": "features.2.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            96,
+            16,
+            16
+          ],
+          "macs": 221184
+        },
+        {
+          "layer": "features.2.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            24,
+            16,
+            16
+          ],
+          "macs": 589824
+        },
+        {
+          "layer": "features.3.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            144,
+            16,
+            16
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.3.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            144,
+            16,
+            16
+          ],
+          "macs": 331776
+        },
+        {
+          "layer": "features.3.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            24,
+            16,
+            16
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.4.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            144,
+            16,
+            16
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.4.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            144,
+            8,
+            8
+          ],
+          "macs": 82944
+        },
+        {
+          "layer": "features.4.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            8,
+            8
+          ],
+          "macs": 294912
+        },
+        {
+          "layer": "features.5.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            192,
+            8,
+            8
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.5.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            192,
+            8,
+            8
+          ],
+          "macs": 110592
+        },
+        {
+          "layer": "features.5.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            8,
+            8
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.6.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            192,
+            8,
+            8
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.6.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            192,
+            8,
+            8
+          ],
+          "macs": 110592
+        },
+        {
+          "layer": "features.6.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            32,
+            8,
+            8
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.7.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            192,
+            8,
+            8
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.7.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            192,
+            4,
+            4
+          ],
+          "macs": 27648
+        },
+        {
+          "layer": "features.7.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            4,
+            4
+          ],
+          "macs": 196608
+        },
+        {
+          "layer": "features.8.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.8.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 55296
+        },
+        {
+          "layer": "features.8.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.9.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.9.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 55296
+        },
+        {
+          "layer": "features.9.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.10.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.10.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 55296
+        },
+        {
+          "layer": "features.10.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            64,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.11.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 393216
+        },
+        {
+          "layer": "features.11.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            384,
+            4,
+            4
+          ],
+          "macs": 55296
+        },
+        {
+          "layer": "features.11.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            96,
+            4,
+            4
+          ],
+          "macs": 589824
+        },
+        {
+          "layer": "features.12.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            576,
+            4,
+            4
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.12.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            576,
+            4,
+            4
+          ],
+          "macs": 82944
+        },
+        {
+          "layer": "features.12.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            96,
+            4,
+            4
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.13.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            576,
+            4,
+            4
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.13.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            576,
+            4,
+            4
+          ],
+          "macs": 82944
+        },
+        {
+          "layer": "features.13.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            96,
+            4,
+            4
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.14.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            576,
+            4,
+            4
+          ],
+          "macs": 884736
+        },
+        {
+          "layer": "features.14.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            576,
+            2,
+            2
+          ],
+          "macs": 20736
+        },
+        {
+          "layer": "features.14.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            160,
+            2,
+            2
+          ],
+          "macs": 368640
+        },
+        {
+          "layer": "features.15.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            960,
+            2,
+            2
+          ],
+          "macs": 614400
+        },
+        {
+          "layer": "features.15.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            960,
+            2,
+            2
+          ],
+          "macs": 34560
+        },
+        {
+          "layer": "features.15.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            160,
+            2,
+            2
+          ],
+          "macs": 614400
+        },
+        {
+          "layer": "features.16.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            960,
+            2,
+            2
+          ],
+          "macs": 614400
+        },
+        {
+          "layer": "features.16.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            960,
+            2,
+            2
+          ],
+          "macs": 34560
+        },
+        {
+          "layer": "features.16.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            160,
+            2,
+            2
+          ],
+          "macs": 614400
+        },
+        {
+          "layer": "features.17.conv.0.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            960,
+            2,
+            2
+          ],
+          "macs": 614400
+        },
+        {
+          "layer": "features.17.conv.1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            960,
+            2,
+            2
+          ],
+          "macs": 34560
+        },
+        {
+          "layer": "features.17.conv.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            320,
+            2,
+            2
+          ],
+          "macs": 1228800
+        },
+        {
+          "layer": "features.18.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            1280,
+            2,
+            2
+          ],
+          "macs": 1638400
+        },
+        {
+          "layer": "classifier.1",
+          "type": "Linear",
+          "output_shape": [
+            1,
+            5
+          ],
+          "macs": 6400
+        }
+      ]
+    },
+    "ShuffleNetV2 1.0x": {
+      "input_shape": [
+        1,
+        3,
+        64,
+        64
+      ],
+      "output_shape": [
+        1,
+        5
+      ],
+      "total_parameters": 1258729,
+      "trainable_parameters": 1258729,
+      "macs": 11750752,
+      "flops_2_per_mac": 23501504,
+      "layers": [
+        {
+          "layer": "conv1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            24,
+            32,
+            32
+          ],
+          "macs": 663552
+        },
+        {
+          "layer": "stage2.0.branch1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            24,
+            8,
+            8
+          ],
+          "macs": 13824
+        },
+        {
+          "layer": "stage2.0.branch1.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 89088
+        },
+        {
+          "layer": "stage2.0.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            16,
+            16
+          ],
+          "macs": 356352
+        },
+        {
+          "layer": "stage2.0.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 33408
+        },
+        {
+          "layer": "stage2.0.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage2.1.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage2.1.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 33408
+        },
+        {
+          "layer": "stage2.1.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage2.2.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage2.2.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 33408
+        },
+        {
+          "layer": "stage2.2.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage2.3.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage2.3.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 33408
+        },
+        {
+          "layer": "stage2.3.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            58,
+            8,
+            8
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.0.branch1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.0.branch1.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.0.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            8,
+            8
+          ],
+          "macs": 861184
+        },
+        {
+          "layer": "stage3.0.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.0.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.1.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.1.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.1.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.2.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.2.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.2.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.3.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.3.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.3.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.4.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.4.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.4.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.5.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.5.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.5.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.6.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.6.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.6.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.7.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage3.7.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 16704
+        },
+        {
+          "layer": "stage3.7.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            116,
+            4,
+            4
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.0.branch1.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 8352
+        },
+        {
+          "layer": "stage4.0.branch1.2",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.0.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            4,
+            4
+          ],
+          "macs": 861184
+        },
+        {
+          "layer": "stage4.0.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 8352
+        },
+        {
+          "layer": "stage4.0.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.1.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.1.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 8352
+        },
+        {
+          "layer": "stage4.1.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.2.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.2.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 8352
+        },
+        {
+          "layer": "stage4.2.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.3.branch2.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "stage4.3.branch2.3",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 8352
+        },
+        {
+          "layer": "stage4.3.branch2.5",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            232,
+            2,
+            2
+          ],
+          "macs": 215296
+        },
+        {
+          "layer": "conv5.0",
+          "type": "Conv2d",
+          "output_shape": [
+            1,
+            1024,
+            2,
+            2
+          ],
+          "macs": 1900544
+        },
+        {
+          "layer": "fc",
+          "type": "Linear",
+          "output_shape": [
+            1,
+            5
+          ],
+          "macs": 5120
+        }
+      ]
+    }
+  }
+}

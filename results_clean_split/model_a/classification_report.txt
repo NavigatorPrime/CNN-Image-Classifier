@@ -1,0 +1,25 @@
+Model A: Standard CNN - Classification Report
+==================================================
+
+              precision    recall  f1-score   support
+
+          H1     0.6783    0.9394    0.7878       660
+          H2     0.5000    0.1771    0.2616       350
+          H3     0.7164    0.3902    0.5053       123
+          H5     0.8440    0.7541    0.7965       122
+          H6     0.6711    0.9189    0.7757       111
+
+    accuracy                         0.6764      1366
+   macro avg     0.6820    0.6360    0.6254      1366
+weighted avg     0.6503    0.6764    0.6273      1366
+
+Test Accuracy: 67.6428%
+Test Loss: 0.8360
+Total Parameters: 2,553,349
+Checkpoint Size on Disk: 9.755 MiB
+Best Epoch: 11
+Best Validation Accuracy: 0.700292
+Macro Precision: 0.681969
+Macro Recall: 0.635960
+Macro F1: 0.625374
+Training Time: 346.43s (17.32s/epoch)

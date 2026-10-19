@@ -24,22 +24,28 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
-from reproducibility import DEFAULT_SEED, make_generator, seed_everything, seed_worker
+from data_preparation import verify_prepared_dataset
+from reproducibility import (
+    DEFAULT_SEED,
+    dataset_provenance,
+    make_generator,
+    prepare_run_directory,
+    seed_everything,
+    seed_worker,
+)
 
 # ============================================================
 # Configuration
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 DATASET_DIR = BASE_DIR / "dataset"
-RESULTS_DIR = BASE_DIR / "results" / "model_a"
-RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Hyperparameters
 IMG_SIZE = 64
 NUM_CLASSES = 5
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
-NUM_EPOCHS = 30
+NUM_EPOCHS = 20
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print(f"[INFO] Using device: {DEVICE}")
@@ -334,9 +340,16 @@ def main():
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch size")
     parser.add_argument("--lr", type=float, default=LEARNING_RATE, help="Learning rate")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers (default: 0 for Windows)")
+    parser.add_argument("--output-dir", help="Run output directory; defaults to a unique runs/model_a directory")
+    parser.add_argument("--overwrite", action="store_true", help="Allow writing into a non-empty output directory")
     args = parser.parse_args()
 
+    results_dir = prepare_run_directory(
+        BASE_DIR, "model_a", args.output_dir, args.overwrite
+    )
+
     seed_everything(DEFAULT_SEED)
+    verify_prepared_dataset(DATASET_DIR)
 
     # Load data
     train_loader, val_loader, test_loader, class_names, n_train, n_val, n_test = get_data_loaders(
@@ -363,7 +376,7 @@ def main():
     # Training history
     history = {
         'train_loss': [], 'train_acc': [],
-        'val_loss': [], 'val_acc': []
+        'val_loss': [], 'val_acc': [], 'epoch_times': []
     }
     
     best_val_acc = 0.0
@@ -375,6 +388,7 @@ def main():
     print("-" * 72)
     
     for epoch in range(1, args.epochs + 1):
+        epoch_start = time.time()
         # Train
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, DEVICE)
         
@@ -389,6 +403,7 @@ def main():
         history['train_acc'].append(train_acc)
         history['val_loss'].append(val_loss)
         history['val_acc'].append(val_acc)
+        history['epoch_times'].append(time.time() - epoch_start)
         
         # Get current learning rate
         current_lr = optimizer.param_groups[0]['lr']
@@ -399,7 +414,7 @@ def main():
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             best_epoch = epoch
-            torch.save(model.state_dict(), str(RESULTS_DIR / "model_a_best.pth"))
+            torch.save(model.state_dict(), str(results_dir / "model_a_best.pth"))
     
     total_time = time.time() - start_time
     print(f"\n[INFO] Training complete in {total_time:.1f}s ({total_time/60:.1f} min)")
@@ -409,7 +424,7 @@ def main():
     # Evaluation on Test Set
     # --------------------------------------------------------
     print("\n[INFO] Loading best model for test evaluation...")
-    model.load_state_dict(torch.load(str(RESULTS_DIR / "model_a_best.pth"), weights_only=True))
+    model.load_state_dict(torch.load(str(results_dir / "model_a_best.pth"), weights_only=True))
     
     test_loss, test_acc = evaluate(model, test_loader, criterion, DEVICE)
     print(f"[RESULT] Test Loss: {test_loss:.4f}")
@@ -419,29 +434,71 @@ def main():
     y_true, y_pred = get_predictions(model, test_loader, DEVICE)
     
     # Classification report
-    report = classification_report(y_true, y_pred, target_names=class_names, digits=4)
+    report = classification_report(
+        y_true, y_pred, target_names=class_names, digits=4, zero_division=0
+    )
+    report_dict = classification_report(
+        y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0
+    )
+    macro = report_dict["macro avg"]
+    cm = confusion_matrix(y_true, y_pred)
+    checkpoint_path = results_dir / "model_a_best.pth"
+    checkpoint_size_mib = checkpoint_path.stat().st_size / (1024**2)
+    average_epoch_time = float(np.mean(history["epoch_times"]))
     print(f"\n[RESULT] Classification Report:\n{report}")
     
     # Save classification report
-    with open(str(RESULTS_DIR / "classification_report.txt"), 'w') as f:
+    with open(str(results_dir / "classification_report.txt"), 'w') as f:
         f.write("Model A: Standard CNN - Classification Report\n")
         f.write("=" * 50 + "\n\n")
         f.write(report)
         f.write(f"\nTest Accuracy: {test_acc:.4%}\n")
         f.write(f"Test Loss: {test_loss:.4f}\n")
         f.write(f"Total Parameters: {total_params:,}\n")
-        f.write(f"Training Time: {total_time:.1f}s\n")
+        f.write(f"Checkpoint Size on Disk: {checkpoint_size_mib:.3f} MiB\n")
+        f.write(f"Best Epoch: {best_epoch}\n")
+        f.write(f"Best Validation Accuracy: {best_val_acc:.6f}\n")
+        f.write(f"Macro Precision: {macro['precision']:.6f}\n")
+        f.write(f"Macro Recall: {macro['recall']:.6f}\n")
+        f.write(f"Macro F1: {macro['f1-score']:.6f}\n")
+        f.write(f"Training Time: {total_time:.2f}s ({average_epoch_time:.2f}s/epoch)\n")
     
     # --------------------------------------------------------
     # Save Plots
     # --------------------------------------------------------
-    plot_loss_curves(history, str(RESULTS_DIR / "loss_curves.png"))
-    plot_training_curves(history, str(RESULTS_DIR / "training_curves.png"))
-    plot_confusion_matrix(y_true, y_pred, class_names, str(RESULTS_DIR / "confusion_matrix.png"))
+    plot_loss_curves(history, str(results_dir / "loss_curves.png"))
+    plot_training_curves(history, str(results_dir / "training_curves.png"))
+    plot_confusion_matrix(y_true, y_pred, class_names, str(results_dir / "confusion_matrix.png"))
+    np.savetxt(results_dir / "confusion_matrix.csv", cm, fmt="%d", delimiter=",")
     
     # Save training history as JSON
-    with open(str(RESULTS_DIR / "training_history.json"), 'w') as f:
-        json.dump(history, f, indent=2)
+    summary = {
+        "model_name": "Model A",
+        "total_parameters": total_params,
+        "trainable_parameters": trainable_params,
+        "epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "seed": DEFAULT_SEED,
+        "samples": {"train": n_train, "validation": n_val, "test": n_test},
+        "dataset": dataset_provenance(BASE_DIR),
+        "checkpoint_selection": "highest validation accuracy",
+        "best_epoch": best_epoch,
+        "best_validation_accuracy": best_val_acc,
+        "checkpoint": checkpoint_path.as_posix(),
+        "checkpoint_size_mib": checkpoint_size_mib,
+        "test_loss": test_loss,
+        "test_accuracy": test_acc * 100,
+        "macro_precision": macro["precision"],
+        "macro_recall": macro["recall"],
+        "macro_f1": macro["f1-score"],
+        "total_training_time_seconds": total_time,
+        "avg_epoch_time_seconds": average_epoch_time,
+        "confusion_matrix": cm.tolist(),
+        "classification_report": report_dict,
+        "history": history,
+    }
+    with open(str(results_dir / "training_history.json"), 'w') as f:
+        json.dump(summary, f, indent=2)
     
     # --------------------------------------------------------
     # Final Summary
@@ -455,7 +512,7 @@ def main():
     print(f"Test Accuracy:    {test_acc:.2%}")
     print(f"Test Loss:        {test_loss:.4f}")
     print(f"Training Time:    {total_time:.1f}s")
-    print(f"Results saved to: {RESULTS_DIR}")
+    print(f"Results saved to: {results_dir}")
     print("=" * 60)
 
 

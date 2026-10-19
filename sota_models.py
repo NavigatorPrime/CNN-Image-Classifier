@@ -32,14 +32,21 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, models
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
-from reproducibility import DEFAULT_SEED, make_generator, seed_everything, seed_worker
+from data_preparation import verify_prepared_dataset
+from reproducibility import (
+    DEFAULT_SEED,
+    dataset_provenance,
+    make_generator,
+    prepare_run_directory,
+    seed_everything,
+    seed_worker,
+)
 
 # ============================================================
 # Configuration & Paths
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 DATASET_DIR = BASE_DIR / "dataset"
-RESULTS_DIR = BASE_DIR / "results"
 
 IMG_SIZE = 64
 NUM_CLASSES = 5
@@ -279,9 +286,21 @@ def plot_confusion_matrix(cm, class_names, output_dir, model_name):
 # ============================================================
 # Training Runner
 # ============================================================
-def train_and_evaluate_model(model_name, model_id, model, train_loader, val_loader, test_loader, class_names, num_epochs=NUM_EPOCHS):
-    out_dir = RESULTS_DIR / model_id
-    out_dir.mkdir(parents=True, exist_ok=True)
+def train_and_evaluate_model(
+    model_name,
+    model_id,
+    model,
+    train_loader,
+    val_loader,
+    test_loader,
+    class_names,
+    output_root,
+    num_epochs=NUM_EPOCHS,
+    overwrite=False,
+):
+    out_dir = prepare_run_directory(
+        BASE_DIR, model_id, Path(output_root) / model_id, overwrite
+    )
 
     print("\n" + "=" * 70)
     print(f"  TRAINING & EVALUATION: {model_name} ({model_id})")
@@ -298,6 +317,8 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
 
     history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "epoch_times": []}
     best_val_loss = float('inf')
+    best_epoch = 0
+    best_val_acc = 0.0
     best_model_path = out_dir / f"{model_id}_best.pth"
 
     total_start = time.time()
@@ -318,6 +339,8 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
         is_best = val_loss < best_val_loss
         if is_best:
             best_val_loss = val_loss
+            best_epoch = epoch
+            best_val_acc = val_acc
             torch.save(model.state_dict(), best_model_path)
             mark = " [BEST]"
         else:
@@ -353,6 +376,7 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
     # Save artifacts
     plot_curves(history, out_dir, model_name)
     plot_confusion_matrix(cm, class_names, out_dir, model_name)
+    np.savetxt(out_dir / "confusion_matrix.csv", cm, fmt="%d", delimiter=",")
 
     with open(out_dir / "classification_report.txt", "w") as f:
         f.write(f"Model: {model_name}\n")
@@ -360,20 +384,44 @@ def train_and_evaluate_model(model_name, model_id, model, train_loader, val_load
         f.write(f"Checkpoint Size on Disk: {model_size_mib:.2f} MiB\n")
         f.write(f"Test Accuracy: {test_acc * 100:.2f}%\n")
         f.write(f"Test Loss: {test_loss:.4f}\n\n")
+        f.write(f"Best Epoch: {best_epoch}\n")
+        f.write(f"Best Validation Loss: {best_val_loss:.6f}\n")
+        f.write(f"Macro Precision: {report_dict['macro avg']['precision']:.6f}\n")
+        f.write(f"Macro Recall: {report_dict['macro avg']['recall']:.6f}\n")
+        f.write(f"Macro F1: {report_dict['macro avg']['f1-score']:.6f}\n")
+        f.write(f"Training Time: {total_time:.2f}s ({avg_epoch_time:.2f}s/epoch)\n\n")
         f.write(report_text)
 
     results_summary = {
         "model_name": model_name,
         "total_parameters": total_params,
         "trainable_parameters": trainable_params,
+        "epochs": num_epochs,
+        "batch_size": train_loader.batch_size,
+        "seed": DEFAULT_SEED,
+        "samples": {
+            "train": len(train_loader.dataset),
+            "validation": len(val_loader.dataset),
+            "test": len(test_loader.dataset),
+        },
+        "dataset": dataset_provenance(BASE_DIR),
+        "pretrained_weights": "torchvision DEFAULT ImageNet weights",
+        "checkpoint_selection": "lowest validation loss",
+        "best_epoch": best_epoch,
+        "best_validation_loss": best_val_loss,
+        "best_validation_accuracy": best_val_acc,
         "checkpoint_size_mib": round(model_size_mib, 3),
         "test_accuracy": round(test_acc * 100, 2),
         "test_loss": round(test_loss, 4),
+        "macro_precision": round(report_dict["macro avg"]["precision"], 4),
+        "macro_recall": round(report_dict["macro avg"]["recall"], 4),
         "macro_f1": round(report_dict["macro avg"]["f1-score"], 4),
         "weighted_f1": round(report_dict["weighted avg"]["f1-score"], 4),
         "avg_epoch_time_seconds": round(avg_epoch_time, 2),
         "total_training_time_seconds": round(total_time, 2),
-        "best_val_loss": round(best_val_loss, 4),
+        "checkpoint": best_model_path.as_posix(),
+        "confusion_matrix": cm.tolist(),
+        "classification_report": report_dict,
         "history": history
     }
 
@@ -392,9 +440,21 @@ def main():
                         help="Which SOTA model to train and evaluate")
     parser.add_argument("--epochs", type=int, default=NUM_EPOCHS, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch size")
+    parser.add_argument("--output-dir", help="Output root; defaults to a unique runs/sota directory")
+    parser.add_argument("--overwrite", action="store_true", help="Allow replacing artifacts for a selected model")
     args = parser.parse_args()
 
+    if args.output_dir:
+        output_root = Path(args.output_dir)
+        if not output_root.is_absolute():
+            output_root = BASE_DIR / output_root
+        output_root.mkdir(parents=True, exist_ok=True)
+        output_root = output_root.resolve()
+    else:
+        output_root = prepare_run_directory(BASE_DIR, "sota")
+
     seed_everything(DEFAULT_SEED)
+    verify_prepared_dataset(DATASET_DIR)
 
     print("=" * 70)
     print("  Task 5: Lightweight SOTA Benchmark on DeFungi (64x64)")
@@ -415,28 +475,40 @@ def main():
     if args.model in ["all", "mobilenet_v2"]:
         mb_model = build_mobilenet_v2(num_classes=len(class_names), pretrained=True)
         all_summaries["mobilenet_v2"] = train_and_evaluate_model(
-            "MobileNetV2", "mobilenet_v2", mb_model, train_loader, val_loader, test_loader, class_names, num_epochs=args.epochs
+            "MobileNetV2", "mobilenet_v2", mb_model, train_loader, val_loader,
+            test_loader, class_names, output_root, num_epochs=args.epochs,
+            overwrite=args.overwrite,
         )
 
     # 2. ShuffleNetV2
     if args.model in ["all", "shufflenet_v2"]:
         sf_model = build_shufflenet_v2(num_classes=len(class_names), pretrained=True)
         all_summaries["shufflenet_v2"] = train_and_evaluate_model(
-            "ShuffleNetV2", "shufflenet_v2", sf_model, train_loader, val_loader, test_loader, class_names, num_epochs=args.epochs
+            "ShuffleNetV2", "shufflenet_v2", sf_model, train_loader,
+            val_loader, test_loader, class_names, output_root,
+            num_epochs=args.epochs, overwrite=args.overwrite,
         )
 
-    # Save overall SOTA summary
-    summary_path = RESULTS_DIR / "sota_benchmark_summary.json"
+    # Merge a single-model run into any existing combined summary rather than
+    # replacing it with an incomplete one-model payload.
+    summary_path = output_root / "sota_benchmark_summary.json"
+    combined_summaries = {}
+    if summary_path.exists():
+        combined_summaries = json.loads(summary_path.read_text(encoding="utf-8"))
+    combined_summaries.update(all_summaries)
     with open(summary_path, "w") as f:
-        json.dump(all_summaries, f, indent=2)
+        json.dump(combined_summaries, f, indent=2)
 
     # Generate Markdown Summary Table
-    table_path = RESULTS_DIR / "sota_summary_table.md"
+    table_path = output_root / "sota_summary_table.md"
     with open(table_path, "w") as f:
         f.write("# Task 5: Lightweight SOTA Benchmark Results\n\n")
         f.write("| Architecture | Parameters | Checkpoint Size (MiB) | Test Accuracy (%) | Test Loss | Macro F1 | Avg Time/Epoch (s) |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
-        for k, v in all_summaries.items():
+        for k in ("mobilenet_v2", "shufflenet_v2"):
+            if k not in combined_summaries:
+                continue
+            v = combined_summaries[k]
             f.write(f"| **{v['model_name']}** | {v['total_parameters']:,} | {v['checkpoint_size_mib']} MiB | **{v['test_accuracy']}%** | {v['test_loss']} | {v['macro_f1']} | {v['avg_epoch_time_seconds']}s |\n")
 
     print("\n" + "=" * 70)
