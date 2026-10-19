@@ -6,8 +6,8 @@ experiments use 64×64 RGB inputs and the same deterministic, class-aware split.
 
 > **Canonical result status:** Stage 2 retraining is complete. The authoritative
 > leakage-free metrics, checkpoints, histories, plots, and generated tables are
-> under `results_clean_split/`. The pre-correction `results/` tree is retained
-> only as historical evidence and must not be used as a final result source.
+> under `results_clean_split/`. The pre-correction run has been archived under
+> `archive/results/` for historical provenance.
 
 ## Environment setup
 
@@ -16,7 +16,7 @@ Clone this branch and create an isolated Python environment:
 ```bash
 git clone https://github.com/NavigatorPrime/CNN-Image-Classifier.git
 cd CNN-Image-Classifier
-git checkout EN3150-A03-Final-Corrected-Report-v3
+git checkout EN3150-A03-Final-Corrected-Report
 python -m venv .venv
 ```
 
@@ -88,7 +88,7 @@ optimizer controls, CSV/JSON agreement, and MAC/FLOP consistency. See
 Training scripts create unique timestamped directories under `runs/` by
 default. The explicit paths below make one coherent run easier to assemble.
 They refuse to write into a non-empty directory unless `--overwrite` is given,
-so the historical `results/` tree cannot be replaced by a casual rerun.
+so the historical `archive/results/` tree cannot be replaced by a casual rerun.
 
 The checked-in canonical run used `results_clean_split/` as its explicit root.
 Use a new path for independent reproductions unless you intentionally pass

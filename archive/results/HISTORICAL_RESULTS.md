@@ -1,6 +1,6 @@
 # Historical contaminated-split results
 
-Every artifact below this `results/` directory predates the duplicate-group
+Every artifact below this `archive/results/` directory predates the duplicate-group
 split correction and is retained only for traceability. These metrics,
 checkpoints, plots, and summaries are not canonical and must not be used in the
 final report or comparisons.

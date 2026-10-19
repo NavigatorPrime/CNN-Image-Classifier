@@ -1,7 +1,7 @@
 # Stage 3-4 Clean-Split Completion Summary
 
 All values in this summary come from the corrected leakage-free artifacts in
-`results_clean_split/`. The superseded outputs in `results/` are historical and
+`results_clean_split/`. The superseded outputs in `archive/results/` are historical and
 must not be used for final conclusions.
 
 ## Stage 3 - Final figures and tables

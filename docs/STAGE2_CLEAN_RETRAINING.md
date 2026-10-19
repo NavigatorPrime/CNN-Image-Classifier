@@ -1,7 +1,7 @@
 # Stage 2 Leakage-Free Retraining Record
 
 Stage 2 retrained all seven required experiments on the corrected common split.
-`results_clean_split/` is the canonical result tree. The older `results/` tree
+`results_clean_split/` is the canonical result tree. The older `archive/results/` tree
 is intentionally preserved as historical contaminated-split evidence.
 
 ## Dataset identity
