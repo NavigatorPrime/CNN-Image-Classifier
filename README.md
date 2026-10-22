@@ -200,24 +200,24 @@ Dataset source: [UCI DeFungi (dataset 773)](https://archive.ics.uci.edu/dataset/
 
 This repository is structured to fulfill all technical, experimental, and reporting requirements for **EN3150 Assignment 03 (Resource-Constrained CNN for Edge Image Classification)**:
 
-1. **Task 1 — Data Preparation (Low-Resource Sensor Emulation):**
+1. **Task 01 — Data Preparation (Low-Resource Sensor Emulation):**
    - Uses the 5-class **UCI DeFungi** dataset (excluding CIFAR-10), downscaled to a maximum resolution of `64×64` RGB pixels (`data_preparation.py`).
    - Enforces a deterministic, leakage-free **70% Training (6,380) / 15% Validation (1,368) / 15% Testing (1,366)** split verified via SHA-256 raw-byte and decoded-pixel hashing (`split_manifest.csv`).
 
-2. **Task 2 — Custom Architecture Design (`model_a.py`, `model_b.py`, `Model_B_Design.md`):**
+2. **Task 02 — Custom Architecture Design (`model_a.py`, `model_b.py`, `Model_B_Design.md`):**
    - **Model A (Standard CNN):** Interleaves standard 2D convolutional layers (`Conv2d`) with max-pooling layers (`MaxPool2d`) as the baseline feature extractor.
    - **Model B (Lightweight Edge CNN):** Replaces standard convolutions with **Depthwise Separable Convolutions** (depthwise spatial filtering followed by `1×1` pointwise projections) to substantially reduce multiply-accumulate (MAC) operations while strictly maintaining total trainable parameters well below the **100,000 parameter ceiling**.
    - **Hardware-Aware Activations:** Employs piecewise-linear activations (ReLU / ReLU6) to avoid computationally expensive exponential operations on embedded/edge hardware.
 
-3. **Task 3 — Optimizer Selection & Momentum Analysis (`optimizer_comparison.py`):**
+3. **Task 03 — Optimizer Selection & Momentum Analysis (`optimizer_comparison.py`):**
    - Evaluates the selected optimizer and learning rate against **(a) standard Stochastic Gradient Descent (SGD)** and **(b) SGD with Momentum** from identical initial weights across 20 epochs, logging convergence speed, loss stability, and validation/test generalization.
 
-4. **Task 4 — Custom Model Training, Evaluation & Comparison (`results_clean_split/`):**
+4. **Task 04 — Custom Model Training, Evaluation & Comparison (`results_clean_split/`):**
    - Trains both Model A and Model B for **20 epochs**, generating training/validation loss curves, test set accuracy, macro/weighted precision and recall, and normalized/raw confusion matrices.
    - Compares Model A vs. Model B across total trainable parameters, on-disk checkpoint size (KB), training time per epoch, MACs/FLOPs, and test accuracy.
 
-5. **Task 5 — Lightweight SOTA Fine-Tuning & Evaluation (`sota_models.py`, `SOTA_Evaluation.md`):**
+5. **Task 05 — Lightweight SOTA Fine-Tuning & Evaluation (`sota_models.py`, `SOTA_Evaluation.md`):**
    - Fine-tunes two industry-standard mobile/edge architectures—**MobileNetV2** and **ShuffleNetV2**—on the exact same `64×64` DeFungi data splits for 20 epochs, recording test metrics, total parameter counts, and model footprint in MB.
 
-6. **Task 6 — Final Edge Deployment Trade-off Analysis (`reports/Draco_A03_EN3150.tex`, `reports/Section_6_Final_Comparison.tex`):**
+6. **Task 06 — Final Edge Deployment Trade-off Analysis (`reports/Draco_A03_EN3150.tex`, `reports/Section_6_Final_Comparison.tex`):**
    - Contrasts the custom sub-100k parameter network (**Model B**) against fine-tuned **MobileNetV2** and **ShuffleNetV2**, analyzing the multi-objective balance between classification accuracy, memory footprint (KB vs. MB), and computational complexity (MACs/FLOPs).
